@@ -1,4 +1,4 @@
-package presentation.navigation
+package com.example.ciudadalerta.presentation.navigation
 
 /**
  * Define todas las pantallas disponibles en la aplicación y sus rutas.

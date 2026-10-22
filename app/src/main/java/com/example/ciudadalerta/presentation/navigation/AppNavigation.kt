@@ -1,4 +1,4 @@
-package presentation.navigation
+package com.example.ciudadalerta.presentation.navigation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -12,9 +12,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import presentation.screens.ciudadano.CitizenListScreen
-import presentation.screens.ciudadano.CreateReportScreen
-import presentation.screens.login.LoginScreen
+import com.example.ciudadalerta.presentation.screens.ciudadano.CitizenListScreen
+import com.example.ciudadalerta.presentation.screens.ciudadano.CreateReportScreen
+import com.example.ciudadalerta.presentation.screens.login.LoginScreen
 
 
 /**

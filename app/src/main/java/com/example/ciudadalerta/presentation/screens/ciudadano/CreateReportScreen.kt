@@ -1,4 +1,4 @@
-package presentation.screens.ciudadano
+package com.example.ciudadalerta.presentation.screens.ciudadano
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable

@@ -1,4 +1,4 @@
-package presentation.screens.login
+package com.example.ciudadalerta.presentation.screens.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,7 +33,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import presentation.navigation.Rutas
+import com.example.ciudadalerta.presentation.navigation.Rutas
 
 
 /**
