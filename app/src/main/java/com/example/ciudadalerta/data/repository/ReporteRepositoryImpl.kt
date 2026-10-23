@@ -1,4 +1,4 @@
-package com.example.ciudadalerta.data.local.repository
+package com.example.ciudadalerta.data.repository
 
 import com.example.ciudadalerta.data.local.dao.ReporteDao
 import com.example.ciudadalerta.data.local.entity.ReporteEntity
