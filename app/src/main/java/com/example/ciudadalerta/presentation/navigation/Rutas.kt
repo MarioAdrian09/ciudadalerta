@@ -25,7 +25,7 @@ sealed class Rutas(val ruta: String) {
         /**
          *
          * Construye la ruta de navegación inyectando el ID del reporte seleccionado.
-         * @author TU NOMBRE
+         * @author Mario Nambo
          * @param reportId El identificador único del reporte a visualizar.
          * @return La ruta formateada como String (ej. "report_detail_screen/123").
          */

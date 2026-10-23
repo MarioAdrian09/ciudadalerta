@@ -22,6 +22,9 @@ import com.example.ciudadalerta.presentation.screens.ciudadano.CreateReportScree
 import com.example.ciudadalerta.presentation.screens.login.LoginScreen
 import com.example.ciudadalerta.presentation.screens.login.LoginViewModel
 import com.example.ciudadalerta.presentation.screens.login.LoginViewModelFactory
+import com.example.ciudadalerta.presentation.screens.registrer.RegisterScreen
+import com.example.ciudadalerta.presentation.screens.registrer.RegisterViewModel
+import com.example.ciudadalerta.presentation.screens.registrer.RegisterViewModelFactory
 
 
 /**
@@ -43,9 +46,15 @@ fun AppNavigation() {
     val database = CiudadAlertaDatabase.getDatabase(context)
     val usuarioRepository = UsuarioRepositoryImpl(database.usuarioDao())
 
+    val registrorepository = UsuarioRepositoryImpl(database.usuarioDao())
+
 
     val loginViewModel: LoginViewModel = viewModel(
         factory = LoginViewModelFactory(usuarioRepository)
+    )
+
+    val registerViewModel: RegisterViewModel = viewModel(
+        factory = RegisterViewModelFactory(registrorepository)
     )
 
     // El NavHost es el contenedor de las pantallas.
@@ -62,6 +71,18 @@ fun AppNavigation() {
                 viewModel = loginViewModel,
                 onNavigateToRegister = {
                     navController.navigate(Rutas.Register.ruta)
+                }
+            )
+        }
+
+        composable(route = Rutas.Register.ruta) {
+            RegisterScreen(
+                viewModel = registerViewModel,
+                onRegisterSuccess = {
+                    navController.popBackStack()
+                },
+                onBackToLogin = {
+                    navController.popBackStack()
                 }
             )
         }
