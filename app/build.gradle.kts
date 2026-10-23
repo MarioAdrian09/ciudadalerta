@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -53,4 +54,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.8.0")
+    //ROOM
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    // Procesador de anotaciones usando KSP
+    ksp(libs.room.compiler)
 }
