@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
 import com.example.ciudadalerta.presentation.navigation.AppNavigation
+import com.example.ciudadalerta.presentation.permissions.PermissionGate
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -13,11 +14,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CiudadalertaTheme {
-
+                PermissionGate {
                     AppNavigation()
                 }
             }
         }
     }
+}
 
 
