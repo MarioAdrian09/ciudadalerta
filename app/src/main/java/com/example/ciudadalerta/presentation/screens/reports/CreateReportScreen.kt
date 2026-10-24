@@ -1,4 +1,4 @@
-package com.example.ciudadalerta.presentation.screens.ciudadano
+package com.example.ciudadalerta.presentation.screens.reports
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -26,7 +26,7 @@ import java.util.Calendar
  * Pantalla que permite al ciudadano llenar un formulario para reportar una nueva incidencia.
  * Incluye validación visual, selección de categorías (Radios), opciones adicionales (Checkbox)
  * y selección de hora (TimePicker).
- * @author NOMBRE
+ * @author Mario Nambo
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
