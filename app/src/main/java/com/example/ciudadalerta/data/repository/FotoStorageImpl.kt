@@ -1,8 +1,9 @@
-package com.example.ciudadalerta.domain.storage
+package com.example.ciudadalerta.data.repository
 
 import android.content.Context
 import androidx.core.content.FileProvider
 import com.example.ciudadalerta.domain.models.FotoCaptura
+import com.example.ciudadalerta.domain.storage.FotoStorage
 import java.io.File
 
 class FotoStorageImpl(private val context: Context) : FotoStorage {

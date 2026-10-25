@@ -1,10 +1,11 @@
-package com.example.ciudadalerta.domain.location
+package com.example.ciudadalerta.data.repository
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.example.ciudadalerta.domain.location.LocationProvider
 import com.example.ciudadalerta.domain.models.Ubicacion
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority

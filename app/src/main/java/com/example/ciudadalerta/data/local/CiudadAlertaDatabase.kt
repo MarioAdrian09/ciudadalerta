@@ -8,6 +8,9 @@ import com.example.ciudadalerta.data.local.dao.ReporteDao
 import com.example.ciudadalerta.data.local.dao.UsuarioDao
 import com.example.ciudadalerta.data.local.entity.ReporteEntity
 import com.example.ciudadalerta.data.local.entity.UsuarioEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  *
@@ -18,7 +21,7 @@ import com.example.ciudadalerta.data.local.entity.UsuarioEntity
  */
 @Database(
     entities = [UsuarioEntity::class, ReporteEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class CiudadAlertaDatabase : RoomDatabase() {
@@ -30,6 +33,13 @@ abstract class CiudadAlertaDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: CiudadAlertaDatabase? = null
 
+        private val ADMIN_PREDETERMINADO = UsuarioEntity(
+            nombre = "Administrador",
+            correo = "mario@gmail.com",
+            contrasena = "admin123",
+            rol = "Administrador"
+        )
+
         fun getDatabase(context: Context): CiudadAlertaDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -40,6 +50,12 @@ abstract class CiudadAlertaDatabase : RoomDatabase() {
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance
+                instance
+
+                // Garantiza que siempre exista el admin (no duplica si ya está)
+                CoroutineScope(Dispatchers.IO).launch {
+                    instance.usuarioDao().insertarSiNoExiste(ADMIN_PREDETERMINADO)
+                }
                 instance
             }
         }
