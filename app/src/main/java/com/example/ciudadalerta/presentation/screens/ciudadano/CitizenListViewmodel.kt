@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ciudadalerta.domain.models.Reporte
 import com.example.ciudadalerta.domain.repository.ReporteRepository
+import com.example.ciudadalerta.presentation.util.aFechaHora
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,7 +49,7 @@ class CitizenListViewModel(
                         titulo = entidad.titulo,
                         descripcion = entidad.descripcion,
                         estatus = entidad.estatus,
-                        fecha = entidad.hora // Por ahora usamos el campo hora
+                        fecha = entidad.fechaCreacion.aFechaHora() // Por ahora usamos el campo hora
                     )
                 }
             }

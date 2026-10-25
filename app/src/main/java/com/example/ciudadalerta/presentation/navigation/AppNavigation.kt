@@ -22,6 +22,12 @@ import com.example.ciudadalerta.data.repository.ReporteRepositoryImpl
 import com.example.ciudadalerta.data.repository.UsuarioRepositoryImpl
 import com.example.ciudadalerta.data.repository.LocationProviderImpl
 import com.example.ciudadalerta.data.repository.FotoStorageImpl
+import com.example.ciudadalerta.presentation.screens.administrador.AdminDashboardScreen
+import com.example.ciudadalerta.presentation.screens.administrador.AdminDashboardViewModel
+import com.example.ciudadalerta.presentation.screens.administrador.AdminDashboardViewModelFactory
+import com.example.ciudadalerta.presentation.screens.administrador.ReportDetailScreen
+import com.example.ciudadalerta.presentation.screens.administrador.ReportDetailViewModel
+import com.example.ciudadalerta.presentation.screens.administrador.ReportDetailViewModelFactory
 import com.example.ciudadalerta.presentation.screens.ciudadano.CitizenListScreen
 import com.example.ciudadalerta.presentation.screens.ciudadano.CitizenListViewModel
 import com.example.ciudadalerta.presentation.screens.ciudadano.CitizenListViewModelFactory
@@ -71,6 +77,11 @@ fun AppNavigation() {
     val registerViewModel: RegisterViewModel = viewModel(
         factory = RegisterViewModelFactory(registrorepository)
     )
+
+    val adminViewModel: AdminDashboardViewModel = viewModel(
+        factory = AdminDashboardViewModelFactory(reporteRepository)
+    )
+
 
     // El NavHost es el contenedor de las pantallas.
     // Empezaremos en la pantalla de Login.
@@ -145,14 +156,22 @@ fun AppNavigation() {
 
         // 4. Pantalla de Dashboard Administrador EJEMPLO BASICO
         composable(route = Rutas.AdminDashboard.ruta) {
-            //TODO PONER LA RUTA
-            Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Text("Todos los Reportes (Administrador)")
-                Spacer(modifier = Modifier.height(16.dp))
-                // Simulamos abrir el reporte con ID "123"
-                Button(onClick = { navController.navigate(Rutas.ReportDetail.createRoute("123")) }) {
-                    Text("Ver Detalle del Reporte 123")
-                }
+            val loginState by loginViewModel.loginState.collectAsState()
+            val usuario = (loginState as? LoginState.Success)?.usuario
+
+            // Solo el rol Administrador ve este panel
+            if (usuario != null && usuario.rol == "Administrador") {
+
+                AdminDashboardScreen(
+                    navController = navController,
+                    viewModel = adminViewModel,
+                    onCerrarSesion = {
+                        loginViewModel.cerrarSesion()
+                        navController.navigate(Rutas.Login.ruta) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
         }
 
@@ -161,14 +180,18 @@ fun AppNavigation() {
             route = Rutas.ReportDetail.ruta,
             arguments = listOf(navArgument("reportId") { type = NavType.StringType })
         ) { backStackEntry ->
-            // Recuperamos el ID que pasamos en la ruta
-            val reportId = backStackEntry.arguments?.getString("reportId") ?: "ID desconocido"
-            Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Text("Detalle del Reporte: $reportId")
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { navController.popBackStack() }) {
-                    Text("Volver")
-                }
+            val reportId = backStackEntry.arguments?.getString("reportId")?.toIntOrNull()
+            val loginState by loginViewModel.loginState.collectAsState()
+            val usuario = (loginState as? LoginState.Success)?.usuario
+
+            if (usuario != null && usuario.rol == "Administrador" && reportId != null) {
+                val detailViewModel: ReportDetailViewModel = viewModel(
+                    factory = ReportDetailViewModelFactory(reporteRepository, reportId)
+                )
+                ReportDetailScreen(
+                    navController = navController,
+                    viewModel = detailViewModel
+                )
             }
         }
     }
