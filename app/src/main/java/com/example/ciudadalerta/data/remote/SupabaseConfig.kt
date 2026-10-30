@@ -8,4 +8,7 @@ object SupabaseConfig {
     const val URL = "https://kadnekqgnhofedvwbwtz.supabase.co"
     //TODO PONER EL KEY DE LA APP
     const val PUBLISHABLE_KEY = "POR HACER"
+
+    // Nombre del bucket de Storage donde se guardan las fotos de los reportes
+    const val BUCKET_FOTOS = "fotos-reportes"
 }
