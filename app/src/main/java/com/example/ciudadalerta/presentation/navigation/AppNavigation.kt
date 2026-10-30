@@ -1,27 +1,15 @@
 package com.example.ciudadalerta.presentation.navigation
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.ciudadalerta.data.local.CiudadAlertaDatabase
-import com.example.ciudadalerta.data.repository.ReporteRepositoryImpl
-import com.example.ciudadalerta.data.repository.UsuarioRepositoryImpl
-import com.example.ciudadalerta.data.repository.LocationProviderImpl
-import com.example.ciudadalerta.data.repository.FotoStorageImpl
+import com.example.ciudadalerta.di.AppContainer
 import com.example.ciudadalerta.presentation.screens.administrador.AdminDashboardScreen
 import com.example.ciudadalerta.presentation.screens.administrador.AdminDashboardViewModel
 import com.example.ciudadalerta.presentation.screens.administrador.AdminDashboardViewModelFactory
@@ -31,7 +19,6 @@ import com.example.ciudadalerta.presentation.screens.administrador.ReportDetailV
 import com.example.ciudadalerta.presentation.screens.ciudadano.CitizenListScreen
 import com.example.ciudadalerta.presentation.screens.ciudadano.CitizenListViewModel
 import com.example.ciudadalerta.presentation.screens.ciudadano.CitizenListViewModelFactory
-import com.example.ciudadalerta.presentation.screens.reports.CreateReportScreen
 import com.example.ciudadalerta.presentation.screens.login.LoginScreen
 import com.example.ciudadalerta.presentation.screens.login.LoginState
 import com.example.ciudadalerta.presentation.screens.login.LoginViewModel
@@ -39,49 +26,33 @@ import com.example.ciudadalerta.presentation.screens.login.LoginViewModelFactory
 import com.example.ciudadalerta.presentation.screens.registrer.RegisterScreen
 import com.example.ciudadalerta.presentation.screens.registrer.RegisterViewModel
 import com.example.ciudadalerta.presentation.screens.registrer.RegisterViewModelFactory
+import com.example.ciudadalerta.presentation.screens.reports.CreateReportScreen
 import com.example.ciudadalerta.presentation.screens.reports.CreateReportViewModel
 import com.example.ciudadalerta.presentation.screens.reports.CreateReportViewModelFactory
 
-
 /**
- *
  * Define todas las pantallas disponibles en la aplicación y sus rutas.
  * Utiliza una clase sellada (sealed class) para garantizar rutas fuertemente tipadas
  *
  * @author Mario Nambo
  */
 @Composable
-fun AppNavigation() {
+fun AppNavigation(container: AppContainer) {
     // El NavController es el objeto que nos permite cambiar de pantalla
     val navController = rememberNavController()
 
-    // Obtenemos el contexto de la aplicación, necesario para inicializar Room
-    val context = LocalContext.current
-
-    // 1. Instanciamos la Base de Datos y el Repositorio de Usuarios
-    val database = CiudadAlertaDatabase.getDatabase(context)
-    val usuarioRepository = UsuarioRepositoryImpl(database.usuarioDao())
-
-    val registrorepository = UsuarioRepositoryImpl(database.usuarioDao())
-    val reporteRepository = ReporteRepositoryImpl(database.reporteDao())
-
-    val fotoStorage = remember { FotoStorageImpl(context.applicationContext) }
-    val locationProvider = remember { LocationProviderImpl(context.applicationContext) }
-
-
-
+    // 1. Obtenemos las instancias de ViewModels a través de sus factories usando las dependencias de AppContainer
     val loginViewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(usuarioRepository)
+        factory = LoginViewModelFactory(container.usuarioRepository)
     )
 
     val registerViewModel: RegisterViewModel = viewModel(
-        factory = RegisterViewModelFactory(registrorepository)
+        factory = RegisterViewModelFactory(container.usuarioRepository)
     )
 
     val adminViewModel: AdminDashboardViewModel = viewModel(
-        factory = AdminDashboardViewModelFactory(reporteRepository)
+        factory = AdminDashboardViewModelFactory(container.reporteRepository)
     )
-
 
     // El NavHost es el contenedor de las pantallas.
     // Empezaremos en la pantalla de Login.
@@ -123,7 +94,7 @@ fun AppNavigation() {
                 val citizenListViewModel: CitizenListViewModel = viewModel(
                     key = "citizen_${usuario.id}",
                     factory = CitizenListViewModelFactory(
-                        reporteRepository,
+                        container.reporteRepository,
                         usuario.nombre,
                         usuario.correo,
                         usuario.id
@@ -136,7 +107,7 @@ fun AppNavigation() {
             }
         }
 
-        // 3. Pantalla para Crear Reporte EJEMPLO BASICO
+        // 3. Pantalla para Crear Reporte
         composable(route = Rutas.CreateReport.ruta) {
             val loginState by loginViewModel.loginState.collectAsState()
             val usuario = (loginState as? LoginState.Success)?.usuario
@@ -144,7 +115,10 @@ fun AppNavigation() {
             if (usuario != null) {
                 val createReportViewModel: CreateReportViewModel = viewModel(
                     factory = CreateReportViewModelFactory(
-                        reporteRepository, locationProvider, fotoStorage, usuario.id
+                        container.reporteRepository,
+                        container.locationProvider,
+                        container.fotoStorage,
+                        usuario.id
                     )
                 )
                 CreateReportScreen(
@@ -154,7 +128,7 @@ fun AppNavigation() {
             }
         }
 
-        // 4. Pantalla de Dashboard Administrador EJEMPLO BASICO
+        // 4. Pantalla de Dashboard Administrador
         composable(route = Rutas.AdminDashboard.ruta) {
             val loginState by loginViewModel.loginState.collectAsState()
             val usuario = (loginState as? LoginState.Success)?.usuario
@@ -175,7 +149,7 @@ fun AppNavigation() {
             }
         }
 
-        // 5. Pantalla de Detalle de Reporte (Recibe argumentos) EJEMPLO BASICO
+        // 5. Pantalla de Detalle de Reporte (Recibe argumentos)
         composable(
             route = Rutas.ReportDetail.ruta,
             arguments = listOf(navArgument("reportId") { type = NavType.StringType })
@@ -186,7 +160,7 @@ fun AppNavigation() {
 
             if (usuario != null && usuario.rol == "Administrador" && reportId != null) {
                 val detailViewModel: ReportDetailViewModel = viewModel(
-                    factory = ReportDetailViewModelFactory(reporteRepository, reportId)
+                    factory = ReportDetailViewModelFactory(container.reporteRepository, reportId)
                 )
                 ReportDetailScreen(
                     navController = navController,

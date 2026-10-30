@@ -12,10 +12,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // la Activity no crea nada, solo recibe el contenedor de la Application
+        val container = (application as ciudadAlertaApp).container
+
         setContent {
             CiudadalertaTheme {
                 PermissionGate {
-                    AppNavigation()
+                    AppNavigation(container = container)
                 }
             }
         }
