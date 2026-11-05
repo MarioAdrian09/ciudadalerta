@@ -51,6 +51,12 @@ abstract class CiudadAlertaDatabase : RoomDatabase() {
                     .build()
                 INSTANCE = instance
                 instance
+
+                // Garantiza que siempre exista el admin (no duplica si ya está)
+                CoroutineScope(Dispatchers.IO).launch {
+                    instance.usuarioDao().insertarSiNoExiste(ADMIN_PREDETERMINADO)
+                }
+                instance
             }
         }
     }
