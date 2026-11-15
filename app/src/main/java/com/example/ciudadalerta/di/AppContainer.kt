@@ -6,6 +6,7 @@ import com.example.ciudadalerta.data.local.SessionManager
 import com.example.ciudadalerta.data.remote.RetrofitClient
 import com.example.ciudadalerta.data.remote.SupabaseApi
 import com.example.ciudadalerta.data.repository.AuthRepositoryImpl
+import com.example.ciudadalerta.data.repository.ConexionObserverImpl
 import com.example.ciudadalerta.data.repository.FotoStorageImpl
 import com.example.ciudadalerta.data.repository.LocationProviderImpl
 import com.example.ciudadalerta.data.repository.ReporteRepositoryImpl
@@ -15,6 +16,7 @@ import com.example.ciudadalerta.domain.repository.AuthRepository
 import com.example.ciudadalerta.domain.repository.ReporteRepository
 import com.example.ciudadalerta.domain.repository.UsuarioRepository
 import com.example.ciudadalerta.domain.storage.FotoStorage
+import com.example.ciudadalerta.domain.sync.ConexionObserver
 import com.example.ciudadalerta.domain.sync.SyncScheduler
 import com.example.ciudadalerta.domain.sync.WorkManagerSyncScheduler
 
@@ -44,11 +46,13 @@ class AppContainer(context: Context) {
     val authRepository: AuthRepository by lazy { AuthRepositoryImpl(supabaseApi, sessionManager) }
 
     val reporteRepository: ReporteRepository by lazy {
-        ReporteRepositoryImpl(database.reporteDao(), supabaseApi, syncScheduler)
+        ReporteRepositoryImpl(database.reporteDao(), supabaseApi, syncScheduler, conexionObserver)
     }
     val syncScheduler: SyncScheduler by lazy { WorkManagerSyncScheduler(appContext) }
 
     //Servicios del dispositivo
     val fotoStorage: FotoStorage by lazy { FotoStorageImpl(appContext) }
     val locationProvider: LocationProvider by lazy { LocationProviderImpl(appContext) }
+
+    val conexionObserver: ConexionObserver by lazy { ConexionObserverImpl(appContext) }
 }

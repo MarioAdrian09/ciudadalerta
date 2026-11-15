@@ -10,16 +10,27 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
+import androidx.work.WorkInfo
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /** Implementación de [SyncScheduler] con Jetpack WorkManager. */
 class WorkManagerSyncScheduler(context: Context) : SyncScheduler {
 
     private val workManager = WorkManager.getInstance(context.applicationContext)
 
+
     // el trabajo solo corre cuando hay conexión; si no, WorkManager espera la señal
     private val conInternet = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
+    val ETIQUETA = "sync"
+
+    // Todos los trabajos de sincronización llevan la etiqueta "sync": así se observa su estado juntos
+    override val sincronizando: Flow<Boolean> =
+        workManager.getWorkInfosByTagFlow(ETIQUETA).map { trabajos ->
+            trabajos.any { it.state == WorkInfo.State.RUNNING }
+        }
 
     override fun solicitarSincronizacion() {
         val solicitud = OneTimeWorkRequestBuilder<SyncWorker>()

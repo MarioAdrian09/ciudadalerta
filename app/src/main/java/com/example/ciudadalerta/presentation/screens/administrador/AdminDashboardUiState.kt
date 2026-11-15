@@ -1,5 +1,8 @@
 package com.example.ciudadalerta.presentation.screens.administrador
 
+import com.example.ciudadalerta.data.local.entity.EstadoSync
+import com.example.ciudadalerta.domain.models.EstadoRed
+
 const val FILTRO_TODOS = "Todos"
 val filtrosEstatus = listOf(FILTRO_TODOS, "Pendiente", "En Revisión", "Resuelto")
 
@@ -12,7 +15,9 @@ data class AdminReporteUi(
     val estatus: String,
     val fecha: String,
     val nombreUsuario: String,
-    val urgente: Boolean
+    // en AdminReporteUi, al final:
+    val urgente: Boolean,
+    val sincronizacion: String = EstadoSync.ENVIADO
 )
 
 data class AdminDashboardUiState(
@@ -20,5 +25,8 @@ data class AdminDashboardUiState(
     val filtro: String = FILTRO_TODOS,
     val conteos: Map<String, Int> = emptyMap(),       // cantidad por estatus
     val total: Int = 0,
-    val cargando: Boolean = true
+    // en AdminDashboardUiState, al final:
+    val cargando: Boolean = true,
+    val estadoRed: EstadoRed = EstadoRed.EN_LINEA,
+    val pendientes: Int = 0
 )

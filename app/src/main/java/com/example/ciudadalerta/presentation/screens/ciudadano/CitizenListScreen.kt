@@ -19,7 +19,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.ciudadalerta.data.local.entity.EstadoSync
 import com.example.ciudadalerta.domain.models.Reporte
+import com.example.ciudadalerta.presentation.components.SyncBanner
+import com.example.ciudadalerta.presentation.components.SyncChip
 import com.example.ciudadalerta.presentation.navigation.Rutas
 
 /**
@@ -38,6 +41,7 @@ fun CitizenListScreen(
 ) {
     val nombreUsuario by viewModel.nombreUsuario.collectAsState()
     val listaReportes by viewModel.reportes.collectAsState()
+    val estadoRed by viewModel.estadoRed.collectAsState()
 
     Scaffold(
         topBar = {
@@ -84,25 +88,26 @@ fun CitizenListScreen(
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Crear nuevo reporte")
             }
         }
-    ) { paddingValues ->
-        if (listaReportes.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Aún no tienes reportes. Toca + para crear uno.")
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
-            ) {
-                items(listaReportes, key = { it.id }) { reporte ->
-                    ReporteItem(reporte = reporte)
+    ){ paddingValues ->
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            SyncBanner(
+                estado = estadoRed,
+                pendientes = listaReportes.count { it.sincronizacion != EstadoSync.ENVIADO },
+                onSincronizar = viewModel::sincronizarAhora
+            )
+            if (listaReportes.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Aún no tienes reportes. Toca + para crear uno.")
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp)
+                ) {
+                    items(listaReportes, key = { it.id }) { reporte ->
+                        ReporteItem(reporte = reporte)
+                    }
                 }
             }
         }
@@ -112,7 +117,7 @@ fun CitizenListScreen(
 /**
  *
  * Componente visual (Tarjeta) que representa un elemento individual dentro de la lista de reportes.
- * @author NOMBRE
+ * @author Mario Nambo
  */
 @Composable
 fun ReporteItem(reporte: ReporteDummy) {
@@ -170,12 +175,18 @@ fun ReporteItem(reporte: ReporteDummy) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = "Fecha de reporte: ${reporte.fecha}",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.End)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SyncChip(reporte.sincronizacion)
+                Text(
+                    text = reporte.fecha,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

@@ -1,9 +1,8 @@
 package com.example.ciudadalerta.presentation.screens.administrador
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ciudadalerta.data.local.entity.ReporteConUsuario
+import com.example.ciudadalerta.data.local.entity.EstadoSync
 import com.example.ciudadalerta.data.local.entity.ReporteEntity
 import com.example.ciudadalerta.domain.repository.ReporteRepository
 import com.example.ciudadalerta.presentation.util.aFechaHora
@@ -20,15 +19,16 @@ import kotlinx.coroutines.flow.stateIn
  * @author Mario Nambo
  */
 class AdminDashboardViewModel(
-    reporteRepository: ReporteRepository
+    private val reporteRepository: ReporteRepository
 ) : ViewModel() {
 
     private val filtro = MutableStateFlow(FILTRO_TODOS)
 
     val uiState: StateFlow<AdminDashboardUiState> = combine(
         reporteRepository.obtenerTodosLosReportes(),
-        filtro
-    ) { lista, filtroActual ->
+        filtro,
+        reporteRepository.estadoRed
+    ) { lista, filtroActual, red ->
         val todos = lista.map { it.toUi() }
         AdminDashboardUiState(
             reportes = if (filtroActual == FILTRO_TODOS) todos
@@ -36,7 +36,9 @@ class AdminDashboardViewModel(
             filtro = filtroActual,
             conteos = todos.groupingBy { it.estatus }.eachCount(),
             total = todos.size,
-            cargando = false
+            cargando = false,
+            estadoRed = red,
+            pendientes = todos.count { it.sincronizacion != EstadoSync.ENVIADO }
         )
     }.stateIn(
         scope = viewModelScope,
@@ -46,6 +48,10 @@ class AdminDashboardViewModel(
 
     fun onFiltroChanged(nuevo: String) {
         filtro.value = nuevo
+    }
+
+    fun sincronizarAhora() {
+        reporteRepository.sincronizarAhora()
     }
 }
 
@@ -57,5 +63,6 @@ private fun ReporteEntity.toUi() = AdminReporteUi(
     estatus = estatus,
     fecha = fechaCreacion.aFechaHora(),
     nombreUsuario = nombreUsuario ?: "Usuario desconocido",
-    urgente = requiereAtencionInmediata
+    urgente = requiereAtencionInmediata,
+    sincronizacion = estatusSincronizacion
 )
