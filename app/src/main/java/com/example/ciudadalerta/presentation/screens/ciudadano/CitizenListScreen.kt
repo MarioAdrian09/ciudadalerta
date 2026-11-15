@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -32,7 +33,8 @@ import com.example.ciudadalerta.presentation.navigation.Rutas
 @Composable
 fun CitizenListScreen(
     navController: NavController,
-    viewModel: CitizenListViewModel
+    viewModel: CitizenListViewModel,
+    onCerrarSesion: () -> Unit = {}
 ) {
     val nombreUsuario by viewModel.nombreUsuario.collectAsState()
     val listaReportes by viewModel.reportes.collectAsState()
@@ -58,9 +60,18 @@ fun CitizenListScreen(
                         }
                     }
                 },
+                actions = {
+                    IconButton(onClick = onCerrarSesion) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Cerrar sesión"
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
@@ -104,7 +115,7 @@ fun CitizenListScreen(
  * @author NOMBRE
  */
 @Composable
-fun ReporteItem(reporte: Reporte) {
+fun ReporteItem(reporte: ReporteDummy) {
     // Definimos un color dependiendo del estatus del reporte
     val colorEstatus = when (reporte.estatus) {
         "Pendiente" -> Color(0xFFE53935) // Rojo

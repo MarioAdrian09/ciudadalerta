@@ -11,6 +11,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 
+
+/**
+ * Modelo de datos temporal para la UI.
+ */
+data class ReporteDummy(
+    val id: String,
+    val titulo: String,
+    val descripcion: String,
+    val estatus: String,
+    val fecha: String
+)
+
+
 /**
  * ViewModel que gestiona el estado de la pantalla principal del ciudadano.
  * Se conecta a la base de datos a través del ReporteRepository.
@@ -20,7 +33,7 @@ class CitizenListViewModel(
     private val reporteRepository: ReporteRepository,
     usuarioNombre: String,
     private val usuarioCorreo: String,
-    private val usuarioId: Int
+    private val usuarioId: String
 ) : ViewModel() {
 
     // Estado para el nombre/correo del usuario
@@ -28,8 +41,8 @@ class CitizenListViewModel(
     val nombreUsuario: StateFlow<String> = _nombreUsuario.asStateFlow()
 
     // Estado para la lista de reportes
-    private val _reportes = MutableStateFlow<List<Reporte>>(emptyList())
-    val reportes: StateFlow<List<Reporte>> = _reportes.asStateFlow()
+    private val _reportes = MutableStateFlow<List<ReporteDummy>>(emptyList())
+    val reportes: StateFlow<List<ReporteDummy>> = _reportes.asStateFlow()
 
     init {
         // Establecemos el saludo inicial con el nombre (o el correo si el nombre está vacío)
@@ -44,12 +57,12 @@ class CitizenListViewModel(
             reporteRepository.obtenerReportesPorUsuario(usuarioId).collect { listaEntidades ->
                 // Mapeamos los datos de la BD (Entity) a nuestro modelo visual (Dummy/UI Model)
                 _reportes.value = listaEntidades.map { entidad ->
-                    Reporte(
+                    ReporteDummy(
                         id = entidad.id.toString(),
                         titulo = entidad.titulo,
                         descripcion = entidad.descripcion,
                         estatus = entidad.estatus,
-                        fecha = entidad.fechaCreacion.aFechaHora() // Por ahora usamos el campo hora
+                        fecha = entidad.fechaCreacion.aFechaHora()// Por ahora usamos el campo hora
                     )
                 }
             }

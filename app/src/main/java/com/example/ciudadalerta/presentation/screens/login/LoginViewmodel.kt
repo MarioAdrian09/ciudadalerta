@@ -3,6 +3,8 @@ package com.example.ciudadalerta.presentation.screens.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ciudadalerta.data.local.entity.UsuarioEntity
+import com.example.ciudadalerta.domain.models.ResultadoAuth
+import com.example.ciudadalerta.domain.repository.AuthRepository
 import com.example.ciudadalerta.domain.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,20 +18,23 @@ import kotlinx.coroutines.launch
  * @author Mario Nambo
  */
 class LoginViewModel(
-    private val repository: UsuarioRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    // Estado del correo electrónico
-    private val _email = MutableStateFlow("")//Es el estado inicial del email que llega desde la caja de texto de LoginScreen
+    private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
 
-    // Estado de la contraseña
-    private val _password = MutableStateFlow("")//Es el estado inicial del password que llega desde la caja de texto de LoginScreen
+    private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password.asStateFlow()
 
-    // Estado general de la pantalla (Loading, Success, Error)
+    // Estado general de la pantalla (Idle, Loading, Success, Error)
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
+
+    init {
+        // CLAVE: si ya hay una sesión guardada (se lee sin internet), entra directo sin pedir login
+        authRepository.restaurarSesion()?.let { _loginState.value = LoginState.Success(it) }
+    }
 
     fun onEmailChange(nuevoEmail: String) {
         _email.value = nuevoEmail
@@ -40,8 +45,6 @@ class LoginViewModel(
     }
 
     fun login() {
-        // Validación básica
-
         val emailLimpio = _email.value.trim().lowercase()
         val passwordLimpia = _password.value.trim()
 
@@ -50,32 +53,26 @@ class LoginViewModel(
             return
         }
 
-        // Pasamos al estado de carga
         _loginState.value = LoginState.Loading
 
-        // Lanzamos una corrutina para no bloquear la interfaz gráfica
         viewModelScope.launch {
-            try {
-                // Consultamos la base de datos a través del repositorio
-                val usuario = repository.login(emailLimpio, passwordLimpia)
-
-                if (usuario != null) {
-                    // Si el usuario existe, el login es exitoso
-                    _loginState.value = LoginState.Success(usuario)
-                } else {
-                    // Si es null, las credenciales son incorrectas
-                    _loginState.value = LoginState.Error("Correo o contraseña incorrectos.")
-                }
-            } catch (e: Exception) {
-                _loginState.value = LoginState.Error("Ocurrió un error inesperado.")
+            _loginState.value = when (val resultado = authRepository.iniciarSesion(emailLimpio, passwordLimpia)) {
+                is ResultadoAuth.Exito -> LoginState.Success(resultado.dato)
+                is ResultadoAuth.Error -> LoginState.Error(resultado.mensaje)
             }
         }
     }
 
-    // Cierra la sesión: limpia el usuario logueado y los campos del formulario
+    // Cierra la sesión: borra la sesión guardada y limpia el formulario
     fun cerrarSesion() {
+        authRepository.cerrarSesion()
         _email.value = ""
         _password.value = ""
+        _loginState.value = LoginState.Idle
+    }
+
+    // Para limpiar el estado después de mostrar un error
+    fun resetState() {
         _loginState.value = LoginState.Idle
     }
 }

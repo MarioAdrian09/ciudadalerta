@@ -47,7 +47,6 @@ import com.example.ciudadalerta.presentation.navigation.Rutas
  *bien
  * @author Mario Nambo
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     navController: NavController,

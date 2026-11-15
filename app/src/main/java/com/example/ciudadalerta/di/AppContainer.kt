@@ -15,6 +15,8 @@ import com.example.ciudadalerta.domain.repository.AuthRepository
 import com.example.ciudadalerta.domain.repository.ReporteRepository
 import com.example.ciudadalerta.domain.repository.UsuarioRepository
 import com.example.ciudadalerta.domain.storage.FotoStorage
+import com.example.ciudadalerta.domain.sync.SyncScheduler
+import com.example.ciudadalerta.domain.sync.WorkManagerSyncScheduler
 
 /**
  * Contenedor de dependencias de la aplicación (inyección manual).
@@ -39,9 +41,12 @@ class AppContainer(context: Context) {
     }
 
     //Repositorios
-    val authRepository: AuthRepository by lazy { AuthRepositoryImpl(supabaseApi, sessionManager) }//DEPUES SE VA A USAR
-    val usuarioRepository: UsuarioRepository by lazy { UsuarioRepositoryImpl(database.usuarioDao()) }
-    val reporteRepository: ReporteRepository by lazy { ReporteRepositoryImpl(database.reporteDao()) }
+    val authRepository: AuthRepository by lazy { AuthRepositoryImpl(supabaseApi, sessionManager) }
+
+    val reporteRepository: ReporteRepository by lazy {
+        ReporteRepositoryImpl(database.reporteDao(), supabaseApi, syncScheduler)
+    }
+    val syncScheduler: SyncScheduler by lazy { WorkManagerSyncScheduler(appContext) }
 
     //Servicios del dispositivo
     val fotoStorage: FotoStorage by lazy { FotoStorageImpl(appContext) }

@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
  */
 @Database(
     entities = [UsuarioEntity::class, ReporteEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class CiudadAlertaDatabase : RoomDatabase() {
@@ -50,7 +50,6 @@ abstract class CiudadAlertaDatabase : RoomDatabase() {
                     .fallbackToDestructiveMigration(true)
                     .build()
                 INSTANCE = instance
-                instance
 
                 // Garantiza que siempre exista el admin (no duplica si ya está)
                 CoroutineScope(Dispatchers.IO).launch {

@@ -1,6 +1,7 @@
 package com.example.ciudadalerta.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,55 +39,51 @@ import com.example.ciudadalerta.presentation.screens.reports.CreateReportViewMod
  */
 @Composable
 fun AppNavigation(container: AppContainer) {
-    // El NavController es el objeto que nos permite cambiar de pantalla
     val navController = rememberNavController()
 
-    // 1. Obtenemos las instancias de ViewModels a través de sus factories usando las dependencias de AppContainer
+    // ViewModels compartidos entre pantallas utilizando las dependencias del contenedor
     val loginViewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(container.usuarioRepository)
+        factory = LoginViewModelFactory(container.authRepository)
     )
-
     val registerViewModel: RegisterViewModel = viewModel(
-        factory = RegisterViewModelFactory(container.usuarioRepository)
+        factory = RegisterViewModelFactory(container.authRepository)
     )
-
     val adminViewModel: AdminDashboardViewModel = viewModel(
         factory = AdminDashboardViewModelFactory(container.reporteRepository)
     )
 
-    // El NavHost es el contenedor de las pantallas.
-    // Empezaremos en la pantalla de Login.
+    //Aqui empieza lo de sincronización
+    // Cada vez que aparece un usuario con sesión (login nuevo o sesión restaurada) se sincroniza
+    val estadoLogin by loginViewModel.loginState.collectAsState()
+    val usuarioActual = (estadoLogin as? LoginState.Success)?.usuario
+    LaunchedEffect(usuarioActual?.id) {
+        if (usuarioActual != null) container.syncScheduler.solicitarSincronizacion()
+    }
+
     NavHost(
         navController = navController,
         startDestination = Rutas.Login.ruta
     ) {
 
-        // 1. Pantalla de Login
+        // 0. Login (si hay sesión guardada, LoginViewModel pasa a Success y LoginScreen navega sola)
         composable(route = Rutas.Login.ruta) {
             LoginScreen(
                 navController = navController,
                 viewModel = loginViewModel,
-                onNavigateToRegister = {
-                    navController.navigate(Rutas.Register.ruta)
-                }
+                onNavigateToRegister = { navController.navigate(Rutas.Register.ruta) }
             )
         }
 
         composable(route = Rutas.Register.ruta) {
             RegisterScreen(
                 viewModel = registerViewModel,
-                onRegisterSuccess = {
-                    navController.popBackStack()
-                },
-                onBackToLogin = {
-                    navController.popBackStack()
-                }
+                onRegisterSuccess = { navController.popBackStack() },
+                onBackToLogin = { navController.popBackStack() }
             )
         }
 
-        // 2. Pantalla de Lista de Ciudadano
+        // 2. Lista del ciudadano
         composable(route = Rutas.CitizenList.ruta) {
-            // El usuario logueado vive en el LoginViewModel
             val loginState by loginViewModel.loginState.collectAsState()
             val usuario = (loginState as? LoginState.Success)?.usuario
 
@@ -102,12 +99,18 @@ fun AppNavigation(container: AppContainer) {
                 )
                 CitizenListScreen(
                     navController = navController,
-                    viewModel = citizenListViewModel
+                    viewModel = citizenListViewModel,
+                    onCerrarSesion = {
+                        loginViewModel.cerrarSesion()
+                        navController.navigate(Rutas.Login.ruta) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
                 )
             }
         }
 
-        // 3. Pantalla para Crear Reporte
+        // 3. Crear reporte
         composable(route = Rutas.CreateReport.ruta) {
             val loginState by loginViewModel.loginState.collectAsState()
             val usuario = (loginState as? LoginState.Success)?.usuario
@@ -118,7 +121,8 @@ fun AppNavigation(container: AppContainer) {
                         container.reporteRepository,
                         container.locationProvider,
                         container.fotoStorage,
-                        usuario.id
+                        usuario.id,
+                        usuario.nombre
                     )
                 )
                 CreateReportScreen(
@@ -128,14 +132,13 @@ fun AppNavigation(container: AppContainer) {
             }
         }
 
-        // 4. Pantalla de Dashboard Administrador
+        // 4. Panel del administrador
         composable(route = Rutas.AdminDashboard.ruta) {
             val loginState by loginViewModel.loginState.collectAsState()
             val usuario = (loginState as? LoginState.Success)?.usuario
 
             // Solo el rol Administrador ve este panel
             if (usuario != null && usuario.rol == "Administrador") {
-
                 AdminDashboardScreen(
                     navController = navController,
                     viewModel = adminViewModel,
@@ -149,12 +152,12 @@ fun AppNavigation(container: AppContainer) {
             }
         }
 
-        // 5. Pantalla de Detalle de Reporte (Recibe argumentos)
+        // 5. Detalle de un reporte (solo Administrador)
         composable(
             route = Rutas.ReportDetail.ruta,
             arguments = listOf(navArgument("reportId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val reportId = backStackEntry.arguments?.getString("reportId")?.toIntOrNull()
+            val reportId = backStackEntry.arguments?.getString("reportId")
             val loginState by loginViewModel.loginState.collectAsState()
             val usuario = (loginState as? LoginState.Success)?.usuario
 

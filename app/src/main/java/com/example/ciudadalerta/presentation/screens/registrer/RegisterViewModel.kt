@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ciudadalerta.data.local.entity.UsuarioEntity
+import com.example.ciudadalerta.domain.models.ResultadoAuth
+import com.example.ciudadalerta.domain.repository.AuthRepository
 import com.example.ciudadalerta.domain.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,9 +24,9 @@ import kotlinx.coroutines.launch
  * @author Mario Nambo
  */
 class RegisterViewModel(
-    private val usuarioRepository: UsuarioRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
-    private val TAG = "AUTH_DEBUG"
+
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
@@ -61,38 +63,14 @@ class RegisterViewModel(
             }
         }
 
-        // 2. Llamada a la Capa de Datos (Repositorio)
+        // 2. Registro en Supabase (los errores llegan ya traducidos a español)
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                // Se mapea la UI al objeto de Dominio / Entidad
-                val nuevoUsuario = UsuarioEntity(
-                    nombre = currentState.nombre.trim(),
-                    correo = emailLimpio,
-                    contrasena = passwordLimpia,
-                    rol = "Ciudadano"
-                )
-
-                // Llama directamente a tu interfaz de repositorio
-                usuarioRepository.registrarUsuario(nuevoUsuario)
-
-                Log.d(TAG, "=== REGISTRO EXITOSO EN REPOSITORIO ===")
-                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-
-            } catch (e: SQLiteConstraintException) {
-                Log.w(TAG, "Correo duplicado: $emailLimpio")
-                _uiState.update {
-                    it.copy(isLoading = false, errorMessage = "Este correo ya está registrado")
-                }
-            }
-            catch (e: Exception) {
-                Log.e(TAG, "EXCEPCIÓN EN REGISTRO: ${e.message}", e)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Error al registrar la cuenta"
-                    )
-                }
+            when (val resultado = authRepository.registrar(currentState.nombre.trim(), emailLimpio, passwordLimpia)) {
+                is ResultadoAuth.Exito ->
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                is ResultadoAuth.Error ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = resultado.mensaje) }
             }
         }
     }
