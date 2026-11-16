@@ -24,7 +24,6 @@ class WorkManagerSyncScheduler(context: Context) : SyncScheduler {
     private val conInternet = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
-    val ETIQUETA = "sync"
 
     // Todos los trabajos de sincronización llevan la etiqueta "sync": así se observa su estado juntos
     override val sincronizando: Flow<Boolean> =
@@ -53,5 +52,6 @@ class WorkManagerSyncScheduler(context: Context) : SyncScheduler {
     private companion object {
         const val NOMBRE_INMEDIATA = "sync_inmediata"
         const val NOMBRE_PERIODICA = "sync_periodica"
+        const val ETIQUETA = "sync"
     }
 }

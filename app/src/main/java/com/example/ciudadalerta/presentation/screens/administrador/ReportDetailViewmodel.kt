@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ciudadalerta.data.local.entity.ReporteConUsuario
 import com.example.ciudadalerta.data.local.entity.ReporteEntity
+import com.example.ciudadalerta.domain.models.ResultadoFoto
 import com.example.ciudadalerta.domain.repository.ReporteRepository
 import com.example.ciudadalerta.presentation.util.aFechaHora
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,11 +25,15 @@ class ReportDetailViewModel(
     private val _uiState = MutableStateFlow(ReportDetailUiState())
     val uiState: StateFlow<ReportDetailUiState> = _uiState.asStateFlow()
 
+    private var fotoSolicitada: String? = null
+
     init {
         viewModelScope.launch {
             reporteRepository.obtenerReportePorId(reporteId).collect { datos ->
                 val ui = datos?.toDetailUi()
                 _uiState.update { actual ->
+                    // La foto se pide una sola vez por ruta (el collect se repite cada vez que Room cambia)
+                    ui?.fotoPath?.let { if (it != fotoSolicitada) cargarFoto(it) }
                     actual.copy(
                         reporte = ui,
                         cargando = false,
@@ -61,6 +66,25 @@ class ReportDetailViewModel(
 
     fun mostrarMensaje(texto: String) = _uiState.update { it.copy(mensaje = texto) }
     fun mensajeMostrado() = _uiState.update { it.copy(mensaje = null) }
+
+    fun reintentarFoto() {
+        _uiState.value.reporte?.fotoPath?.let { cargarFoto(it) }
+    }
+
+    private fun cargarFoto(path: String) {
+        fotoSolicitada = path
+        viewModelScope.launch {
+            _uiState.update { it.copy(fotoCargando = true, fotoError = null) }
+            when (val resultado = reporteRepository.obtenerFoto(path)) {
+                is ResultadoFoto.Lista ->
+                    _uiState.update { it.copy(fotoCargando = false, fotoRuta = resultado.ruta) }
+                ResultadoFoto.SinConexion ->
+                    _uiState.update { it.copy(fotoCargando = false, fotoError = "Sin conexión: no se pudo descargar la foto") }
+                ResultadoFoto.NoDisponible ->
+                    _uiState.update { it.copy(fotoCargando = false, fotoError = "La foto no está disponible") }
+            }
+        }
+    }
 }
 
 private fun ReporteEntity.toDetailUi() = ReportDetailUi(

@@ -19,6 +19,7 @@ import com.example.ciudadalerta.domain.storage.FotoStorage
 import com.example.ciudadalerta.domain.sync.ConexionObserver
 import com.example.ciudadalerta.domain.sync.SyncScheduler
 import com.example.ciudadalerta.domain.sync.WorkManagerSyncScheduler
+import java.io.File
 
 /**
  * Contenedor de dependencias de la aplicación (inyección manual).
@@ -46,7 +47,12 @@ class AppContainer(context: Context) {
     val authRepository: AuthRepository by lazy { AuthRepositoryImpl(supabaseApi, sessionManager) }
 
     val reporteRepository: ReporteRepository by lazy {
-        ReporteRepositoryImpl(database.reporteDao(), supabaseApi, syncScheduler, conexionObserver)
+        ReporteRepositoryImpl(
+            database.reporteDao(), supabaseApi, syncScheduler, conexionObserver,
+            carpetaCache = File(appContext.cacheDir, "fotos_remotas"),
+            renovarSesion = { authRepository.renovarSesionSiExpiro() },
+            usuarioActualId = { authRepository.restaurarSesion()?.id }
+        )
     }
     val syncScheduler: SyncScheduler by lazy { WorkManagerSyncScheduler(appContext) }
 
