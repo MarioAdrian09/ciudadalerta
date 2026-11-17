@@ -10,11 +10,9 @@ import com.example.ciudadalerta.data.repository.ConexionObserverImpl
 import com.example.ciudadalerta.data.repository.FotoStorageImpl
 import com.example.ciudadalerta.data.repository.LocationProviderImpl
 import com.example.ciudadalerta.data.repository.ReporteRepositoryImpl
-import com.example.ciudadalerta.data.repository.UsuarioRepositoryImpl
 import com.example.ciudadalerta.domain.location.LocationProvider
 import com.example.ciudadalerta.domain.repository.AuthRepository
 import com.example.ciudadalerta.domain.repository.ReporteRepository
-import com.example.ciudadalerta.domain.repository.UsuarioRepository
 import com.example.ciudadalerta.domain.storage.FotoStorage
 import com.example.ciudadalerta.domain.sync.ConexionObserver
 import com.example.ciudadalerta.domain.sync.SyncScheduler

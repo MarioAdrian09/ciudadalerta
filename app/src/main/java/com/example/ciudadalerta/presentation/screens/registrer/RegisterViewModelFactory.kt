@@ -3,7 +3,6 @@ package com.example.ciudadalerta.presentation.screens.registrer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.ciudadalerta.domain.repository.AuthRepository
-import com.example.ciudadalerta.domain.repository.UsuarioRepository
 
 
 /**

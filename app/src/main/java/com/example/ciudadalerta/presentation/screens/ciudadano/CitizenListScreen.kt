@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.ciudadalerta.data.local.entity.EstadoSync
-import com.example.ciudadalerta.domain.models.Reporte
 import com.example.ciudadalerta.presentation.components.SyncBanner
 import com.example.ciudadalerta.presentation.components.SyncChip
 import com.example.ciudadalerta.presentation.navigation.Rutas

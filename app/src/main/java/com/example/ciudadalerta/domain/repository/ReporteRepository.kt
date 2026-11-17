@@ -1,6 +1,5 @@
 package com.example.ciudadalerta.domain.repository
 
-import com.example.ciudadalerta.data.local.entity.ReporteConUsuario
 import com.example.ciudadalerta.data.local.entity.ReporteEntity
 import com.example.ciudadalerta.domain.models.EstadoRed
 import com.example.ciudadalerta.domain.models.ResultadoFoto

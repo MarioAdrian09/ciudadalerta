@@ -2,7 +2,6 @@ package com.example.ciudadalerta.presentation.screens.administrador
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ciudadalerta.data.local.entity.ReporteConUsuario
 import com.example.ciudadalerta.data.local.entity.ReporteEntity
 import com.example.ciudadalerta.domain.models.ResultadoFoto
 import com.example.ciudadalerta.domain.repository.ReporteRepository

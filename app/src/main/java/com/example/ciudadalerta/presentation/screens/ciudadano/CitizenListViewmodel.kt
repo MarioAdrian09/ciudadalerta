@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ciudadalerta.data.local.entity.EstadoSync
 import com.example.ciudadalerta.domain.models.EstadoRed
-import com.example.ciudadalerta.domain.models.Reporte
 import com.example.ciudadalerta.domain.repository.ReporteRepository
 import com.example.ciudadalerta.presentation.util.aFechaHora
 import kotlinx.coroutines.flow.MutableStateFlow

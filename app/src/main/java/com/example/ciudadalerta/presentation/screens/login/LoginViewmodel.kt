@@ -2,10 +2,8 @@ package com.example.ciudadalerta.presentation.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ciudadalerta.data.local.entity.UsuarioEntity
 import com.example.ciudadalerta.domain.models.ResultadoAuth
 import com.example.ciudadalerta.domain.repository.AuthRepository
-import com.example.ciudadalerta.domain.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

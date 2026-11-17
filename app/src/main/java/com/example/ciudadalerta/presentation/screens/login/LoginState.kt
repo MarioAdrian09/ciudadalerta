@@ -1,6 +1,5 @@
 package com.example.ciudadalerta.presentation.screens.login
 
-import com.example.ciudadalerta.data.local.entity.UsuarioEntity
 import com.example.ciudadalerta.domain.models.UsuarioSesion
 
 /**
