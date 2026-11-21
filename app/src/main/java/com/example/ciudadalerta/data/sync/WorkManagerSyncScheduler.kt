@@ -16,20 +16,12 @@ import kotlinx.coroutines.flow.map
 
 /** Implementación de [SyncScheduler] con Jetpack WorkManager. */
 class WorkManagerSyncScheduler(context: Context) : SyncScheduler {
-
     private val workManager = WorkManager.getInstance(context.applicationContext)
-
 
     // el trabajo solo corre cuando hay conexión; si no, WorkManager espera la señal
     private val conInternet = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
-
-    // Todos los trabajos de sincronización llevan la etiqueta "sync": así se observa su estado juntos
-    override val sincronizando: Flow<Boolean> =
-        workManager.getWorkInfosByTagFlow(ETIQUETA).map { trabajos ->
-            trabajos.any { it.state == WorkInfo.State.RUNNING }
-        }
 
     override fun solicitarSincronizacion() {
         val solicitud = OneTimeWorkRequestBuilder<SyncWorker>()
@@ -40,6 +32,13 @@ class WorkManagerSyncScheduler(context: Context) : SyncScheduler {
         // un reporte creado mientras otra sincronización corre quede en cola y no se pierda.
         workManager.enqueueUniqueWork(NOMBRE_INMEDIATA, ExistingWorkPolicy.APPEND_OR_REPLACE, solicitud)
     }
+
+    // Todos los trabajos de sincronización llevan la etiqueta "sync": así se observa su estado juntos
+    override val sincronizando: Flow<Boolean> =
+        workManager.getWorkInfosByTagFlow(ETIQUETA).map { trabajos ->
+            trabajos.any { it.state == WorkInfo.State.RUNNING }
+        }
+
 
     override fun programarPeriodica() {
         val solicitud = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES) // 15 min es el mínimo

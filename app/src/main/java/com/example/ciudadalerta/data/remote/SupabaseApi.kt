@@ -55,7 +55,6 @@ interface SupabaseApi {
         @Query("id") filtroId: String,
         @Query("select") columnas: String = "*"
     ): Response<List<PerfilDto>>
-
     //REPORTES
 
     /**

@@ -91,6 +91,8 @@ fun LoginScreen(
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
+        val isLoading = loginState is LoginState.Loading
+
         // Campo de Correo Electrónico
         OutlinedTextField(
             value = email,
@@ -102,6 +104,7 @@ fun LoginScreen(
                     contentDescription = "Email Icon"
                 )
             },
+            enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
@@ -130,6 +133,7 @@ fun LoginScreen(
                 }
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 32.dp),
@@ -146,7 +150,7 @@ fun LoginScreen(
         }
 
         // Botón de Iniciar Sesión
-        if (loginState is LoginState.Loading) {
+        if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
         } else {
             Button(
@@ -162,9 +166,9 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Botón de texto para recuperar contraseña (visual por ahora)
+        // Botón de texto para ir a la pantalla de registro
         TextButton(onClick = onNavigateToRegister) {
-            Text("¿Olvidaste tu contraseña?")
+            Text("¿No tienes cuenta? Regístrate")
         }
     }
 }

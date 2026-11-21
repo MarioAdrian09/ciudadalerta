@@ -16,7 +16,7 @@ import com.example.ciudadalerta.data.local.entity.ReporteEntity
  */
 @Database(
     entities = [ReporteEntity::class],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class CiudadAlertaDatabase : RoomDatabase() {

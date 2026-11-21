@@ -54,6 +54,7 @@ fun RegisterScreen(
             value = uiState.nombre,
             onValueChange = viewModel::onNombreChanged,
             label = { Text("Nombre completo") },
+            enabled = !uiState.isLoading,
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -65,6 +66,7 @@ fun RegisterScreen(
             value = uiState.email,
             onValueChange = viewModel::onEmailChanged,
             label = { Text("Correo electrónico") },
+            enabled = !uiState.isLoading,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -77,6 +79,7 @@ fun RegisterScreen(
             value = uiState.password,
             onValueChange = viewModel::onPasswordChanged,
             label = { Text("Contraseña") },
+            enabled = !uiState.isLoading,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
@@ -90,6 +93,7 @@ fun RegisterScreen(
             value = uiState.confirmPassword,
             onValueChange = viewModel::onConfirmPasswordChanged,
             label = { Text("Confirmar contraseña") },
+            enabled = !uiState.isLoading,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,

@@ -116,7 +116,6 @@ class AuthRepositoryImpl(
         }
 
     /** Lee el cuerpo de error de Supabase y devuelve un mensaje en español. */
-    //TODO DESPUES PONER LOS MENSAJES PARA INGLES TAMBIEN
     private fun <T> Response<T>.mensajeDeError(): String {
         val error = errorBody()?.string()?.let { texto ->
             runCatching { RetrofitClient.json.decodeFromString<SupabaseErrorDto>(texto) }.getOrNull()
