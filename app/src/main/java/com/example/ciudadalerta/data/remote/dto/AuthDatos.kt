@@ -4,6 +4,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
+ * Petinciones POST A SUPABASE (Respuestas del servidor)
+ */
+
+/**
  * Datos extra que se guardan junto al usuario al registrarse.
  * Supabase los deja en raw_user_meta_data, y el trigger crear_perfil() los lee para llenar `perfiles`.
  */

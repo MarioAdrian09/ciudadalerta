@@ -26,10 +26,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
 import java.util.Calendar
 
 
@@ -42,7 +44,6 @@ import java.util.Calendar
  * y selección de hora (TimePicker).
  * @author Mario Nambo
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateReportScreen(
     navController: NavController,
@@ -51,26 +52,9 @@ fun CreateReportScreen(
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
 
-    // Estado propio de la UI: el TimePicker
-    var mostrarTimePicker by remember { mutableStateOf(false) }
-
-    val timePickerState = rememberTimePickerState(
-        initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
-        initialMinute = Calendar.getInstance().get(Calendar.MINUTE),
-        is24Hour = false
-    )
-
     // Al guardar con éxito, volvemos a la lista
     LaunchedEffect(state.guardadoExitoso) {
         if (state.guardadoExitoso) navController.popBackStack()
-    }
-
-    // Vista previa de la foto (reducida para no gastar memoria)
-    val fotoBitmap = remember(state.fotoPath) {
-        state.fotoPath?.let {
-            BitmapFactory.decodeFile(it, BitmapFactory.Options().apply { inSampleSize = 4 })
-                ?.asImageBitmap()
-        }
     }
 
     // Cámara
@@ -98,12 +82,70 @@ fun CreateReportScreen(
         else viewModel.mostrarError("Sin permiso de ubicación. Actívalo en Ajustes > Permisos de la app.")
     }
 
+    CreateReportContent(
+        state = state,
+        onTituloChanged = viewModel::onTituloChanged,
+        onDescripcionChanged = viewModel::onDescripcionChanged,
+        onCategoriaChanged = viewModel::onCategoriaChanged,
+        onUrgenteChanged = viewModel::onUrgenteChanged,
+        onHoraChanged = viewModel::onHoraChanged,
+        onObtenerUbicacion = {
+            if (tienePermiso(context, Manifest.permission.ACCESS_FINE_LOCATION) ||
+                tienePermiso(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+            ) viewModel.obtenerUbicacion()
+            else permisoUbicacionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        },
+        onTomarFoto = {
+            if (tienePermiso(context, Manifest.permission.CAMERA)) lanzarCamara()
+            else permisoCamaraLauncher.launch(Manifest.permission.CAMERA)
+        },
+        onGuardarReporte = viewModel::guardarReporte,
+        onVolver = { navController.popBackStack() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateReportContent(
+    state: CreateReportUiState,
+    onTituloChanged: (String) -> Unit = {},
+    onDescripcionChanged: (String) -> Unit = {},
+    onCategoriaChanged: (String) -> Unit = {},
+    onUrgenteChanged: (Boolean) -> Unit = {},
+    onHoraChanged: (String) -> Unit = {},
+    onObtenerUbicacion: () -> Unit = {},
+    onTomarFoto: () -> Unit = {},
+    onGuardarReporte: () -> Unit = {},
+    onVolver: () -> Unit = {}
+) {
+    // Estado propio de la UI: el TimePicker
+    var mostrarTimePicker by remember { mutableStateOf(false) }
+
+    val timePickerState = rememberTimePickerState(
+        initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+        initialMinute = Calendar.getInstance().get(Calendar.MINUTE),
+        is24Hour = false
+    )
+
+    // Vista previa de la foto (reducida para no gastar memoria)
+    val fotoBitmap = remember(state.fotoPath) {
+        state.fotoPath?.let {
+            BitmapFactory.decodeFile(it, BitmapFactory.Options().apply { inSampleSize = 4 })
+                ?.asImageBitmap()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Nuevo Reporte") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onVolver) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
@@ -125,10 +167,7 @@ fun CreateReportScreen(
         ) {
             // 1. Evidencia (Foto)
             Button(
-                onClick = {
-                    if (tienePermiso(context, Manifest.permission.CAMERA)) lanzarCamara()
-                    else permisoCamaraLauncher.launch(Manifest.permission.CAMERA)
-                },
+                onClick = onTomarFoto,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp),
@@ -155,7 +194,7 @@ fun CreateReportScreen(
             // 2. Cajas de Texto
             OutlinedTextField(
                 value = state.titulo,
-                onValueChange = viewModel::onTituloChanged,
+                onValueChange = onTituloChanged,
                 label = { Text("Título del reporte") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -163,7 +202,7 @@ fun CreateReportScreen(
 
             OutlinedTextField(
                 value = state.descripcion,
-                onValueChange = viewModel::onDescripcionChanged,
+                onValueChange = onDescripcionChanged,
                 label = { Text("Descripción detallada") },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -181,7 +220,7 @@ fun CreateReportScreen(
                             .height(48.dp)
                             .selectable(
                                 selected = (categoria == state.categoria),
-                                onClick = { viewModel.onCategoriaChanged(categoria) },
+                                onClick = { onCategoriaChanged(categoria) },
                                 role = Role.RadioButton
                             )
                             .padding(horizontal = 16.dp),
@@ -218,7 +257,7 @@ fun CreateReportScreen(
                     onDismissRequest = { mostrarTimePicker = false },
                     confirmButton = {
                         TextButton(onClick = {
-                            viewModel.onHoraChanged(
+                            onHoraChanged(
                                 "${timePickerState.hour}:${timePickerState.minute.toString().padStart(2, '0')}"
                             )
                             mostrarTimePicker = false
@@ -233,17 +272,7 @@ fun CreateReportScreen(
 
             // 5. Ubicación GPS
             OutlinedButton(
-                onClick = {
-                    if (tienePermiso(context, Manifest.permission.ACCESS_FINE_LOCATION) ||
-                        tienePermiso(context, Manifest.permission.ACCESS_COARSE_LOCATION)
-                    ) viewModel.obtenerUbicacion()
-                    else permisoUbicacionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                },
+                onClick = onObtenerUbicacion,
                 enabled = !state.obteniendoUbicacion,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -253,11 +282,12 @@ fun CreateReportScreen(
                     Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Ubicación")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
+                val ubicacion = state.ubicacion
                 Text(
                     when {
                         state.obteniendoUbicacion -> "Obteniendo ubicación..."
-                        state.ubicacion != null -> "Ubicación: %.5f, %.5f".format(
-                            state.ubicacion!!.latitud, state.ubicacion!!.longitud
+                        ubicacion != null -> "Ubicación: %.5f, %.5f".format(
+                            ubicacion.latitud, ubicacion.longitud
                         )
                         else -> "Obtener mi ubicación GPS"
                     }
@@ -271,7 +301,7 @@ fun CreateReportScreen(
             ) {
                 Checkbox(
                     checked = state.requiereAtencionInmediata,
-                    onCheckedChange = viewModel::onUrgenteChanged
+                    onCheckedChange = onUrgenteChanged
                 )
                 Text("Este problema representa un peligro inminente")
             }
@@ -285,7 +315,7 @@ fun CreateReportScreen(
 
             // 7. Guardar
             Button(
-                onClick = viewModel::guardarReporte,
+                onClick = onGuardarReporte,
                 enabled = !state.guardando,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -299,6 +329,21 @@ fun CreateReportScreen(
     }
 }
 
-
 private fun tienePermiso(context: Context, permiso: String): Boolean =
     ContextCompat.checkSelfPermission(context, permiso) == PackageManager.PERMISSION_GRANTED
+
+@Preview(showBackground = true)
+@Composable
+fun CreateReportContentPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        CreateReportContent(
+            state = CreateReportUiState(
+                titulo = "Fuga de Agua",
+                descripcion = "Fuga constante de agua sobre la banqueta",
+                categoria = "Fuga de Agua",
+                requiereAtencionInmediata = true,
+                hora = "10:30"
+            )
+        )
+    }
+}

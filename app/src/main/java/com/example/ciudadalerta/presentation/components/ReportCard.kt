@@ -7,9 +7,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ciudadalerta.data.local.entity.EstadoSync
 import com.example.ciudadalerta.presentation.screens.ciudadano.ReporteDummy
+import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
 
 /**
  * Componente visual reutilizable que representa un reporte individual.
@@ -70,6 +73,48 @@ fun ReportCard(reporte: ReporteDummy) {
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.End)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReportCardPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ReportCard(
+                reporte = ReporteDummy(
+                    id = "1",
+                    titulo = "Fuga de agua en Av. Principal",
+                    descripcion = "Se observa una fuga constante de agua potable desde hace 2 días.",
+                    estatus = "Pendiente",
+                    fecha = "24 Oct 2023",
+                    sincronizacion = EstadoSync.ENVIADO
+                )
+            )
+            ReportCard(
+                reporte = ReporteDummy(
+                    id = "2",
+                    titulo = "Bache peligroso",
+                    descripcion = "Bache profundo en el carril derecho cerca del semáforo.",
+                    estatus = "En Revisión",
+                    fecha = "23 Oct 2023",
+                    sincronizacion = EstadoSync.LOCAL
+                )
+            )
+            ReportCard(
+                reporte = ReporteDummy(
+                    id = "3",
+                    titulo = "Luminaria apagada",
+                    descripcion = "Foco fundido en la esquina del parque central.",
+                    estatus = "Resuelto",
+                    fecha = "20 Oct 2023",
+                    sincronizacion = EstadoSync.ENVIADO
+                )
             )
         }
     }

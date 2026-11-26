@@ -29,11 +29,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.ciudadalerta.data.local.entity.EstadoSync
 import com.example.ciudadalerta.presentation.components.SyncChip
 import com.example.ciudadalerta.presentation.util.colorPorEstatus
+import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -308,5 +311,40 @@ private fun abrirEnMaps(
         context.startActivity(Intent(Intent.ACTION_VIEW, uri))
     } catch (e: ActivityNotFoundException) {
         onSinApp()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReportDetailContentPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        Surface {
+            DetalleContenido(
+                reporte = ReportDetailUi(
+                    id = "1",
+                    titulo = "Fuga de agua potable",
+                    descripcion = "Tubo roto en banqueta frente al número 123.",
+                    categoria = "Fuga de Agua",
+                    estatus = "Pendiente",
+                    fecha = "24/10/2023",
+                    horaIncidente = "14:30",
+                    nombreUsuario = "Juan Pérez",
+                    urgente = true,
+                    fotoPath = null,
+                    latitud = 19.4326,
+                    longitud = -99.1332,
+                    sincronizacion = EstadoSync.ENVIADO
+                ),
+                estatusSeleccionado = "En Revisión",
+                guardando = false,
+                onEstatusSeleccionado = {},
+                onActualizar = {},
+                onSinAppDeMapas = {},
+                fotoRuta = null,
+                fotoCargando = false,
+                fotoError = null,
+                onReintentarFoto = {}
+            )
+        }
     }
 }

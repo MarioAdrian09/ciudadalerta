@@ -16,13 +16,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.ciudadalerta.data.local.entity.EstadoSync
+import com.example.ciudadalerta.domain.models.EstadoRed
 import com.example.ciudadalerta.presentation.components.SyncBanner
 import com.example.ciudadalerta.presentation.components.SyncChip
 import com.example.ciudadalerta.presentation.navigation.Rutas
+import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
 
 /**
  *
@@ -31,7 +34,6 @@ import com.example.ciudadalerta.presentation.navigation.Rutas
  * y una LazyColumn para renderizar la lista de incidencias.
  * @author Mario Nambo
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CitizenListScreen(
     navController: NavController,
@@ -42,6 +44,26 @@ fun CitizenListScreen(
     val listaReportes by viewModel.reportes.collectAsState()
     val estadoRed by viewModel.estadoRed.collectAsState()
 
+    CitizenListContent(
+        nombreUsuario = nombreUsuario,
+        listaReportes = listaReportes,
+        estadoRed = estadoRed,
+        onCerrarSesion = onCerrarSesion,
+        onCrearReporte = { navController.navigate(Rutas.CreateReport.ruta) },
+        onSincronizar = viewModel::sincronizarAhora
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CitizenListContent(
+    nombreUsuario: String,
+    listaReportes: List<ReporteDummy>,
+    estadoRed: EstadoRed,
+    onCerrarSesion: () -> Unit = {},
+    onCrearReporte: () -> Unit = {},
+    onSincronizar: () -> Unit = {}
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -80,19 +102,19 @@ fun CitizenListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(Rutas.CreateReport.ruta) },
+                onClick = onCrearReporte,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Crear nuevo reporte")
             }
         }
-    ){ paddingValues ->
+    ) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             SyncBanner(
                 estado = estadoRed,
                 pendientes = listaReportes.count { it.sincronizacion != EstadoSync.ENVIADO },
-                onSincronizar = viewModel::sincronizarAhora
+                onSincronizar = onSincronizar
             )
             if (listaReportes.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -187,5 +209,40 @@ fun ReporteItem(reporte: ReporteDummy) {
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReporteItemPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            ReporteItem(
+                reporte = ReporteDummy(
+                    id = "1",
+                    titulo = "Fuga de Agua",
+                    descripcion = "Se detectó fuga de agua potable en la calle 5 de Mayo.",
+                    estatus = "Pendiente",
+                    fecha = "24 Oct 2023",
+                    sincronizacion = EstadoSync.LOCAL
+                )
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CitizenListContentPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        CitizenListContent(
+            nombreUsuario = "Juan Pérez",
+            listaReportes = listOf(
+                ReporteDummy("1", "Fuga de Agua", "Fuga importante en la calle principal.", "Pendiente", "24 Oct 2023", EstadoSync.LOCAL),
+                ReporteDummy("2", "Bache en Avenida", "Bache en el carril central.", "En Revisión", "23 Oct 2023", EstadoSync.ENVIADO),
+                ReporteDummy("3", "Falta de Alumbrado", "Luminaria sin funcionar.", "Resuelto", "20 Oct 2023", EstadoSync.ENVIADO)
+            ),
+            estadoRed = EstadoRed.EN_LINEA
+        )
     }
 }

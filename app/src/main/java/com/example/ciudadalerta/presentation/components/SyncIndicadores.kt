@@ -12,10 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ciudadalerta.data.local.entity.EstadoSync
 import com.example.ciudadalerta.domain.models.EstadoRed
+import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
 import kotlinx.coroutines.delay
 
 /** Etiqueta pequeña con el estado de sincronización de UN reporte. */
@@ -117,6 +119,33 @@ private fun BannerBase(
                 accion?.invoke()
             }
             if (progreso) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SyncChipPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SyncChip(sincronizacion = EstadoSync.LOCAL)
+            SyncChip(sincronizacion = EstadoSync.ESTATUS_PENDIENTE)
+            SyncChip(sincronizacion = EstadoSync.ENVIADO)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SyncBannerPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SyncBanner(estado = EstadoRed.SIN_CONEXION, pendientes = 2, onSincronizar = {})
+            SyncBanner(estado = EstadoRed.SINCRONIZANDO, pendientes = 0, onSincronizar = {})
+            SyncBanner(estado = EstadoRed.EN_LINEA, pendientes = 3, onSincronizar = {})
         }
     }
 }

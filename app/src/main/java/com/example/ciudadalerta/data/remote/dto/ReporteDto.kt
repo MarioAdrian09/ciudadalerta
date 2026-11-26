@@ -4,6 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
+ * Tabla de reportes para SUPABASE
+ *
+ *
  * Fila de la tabla `reportes` en Supabase.
  * Se usa tanto para enviar un reporte (POST) como para leerlo (GET).
  *
