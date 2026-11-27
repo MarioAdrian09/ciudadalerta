@@ -1,5 +1,12 @@
 package com.example.ciudadalerta.presentation.screens.ciudadano
 
+import android.content.Context
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,17 +15,25 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -35,6 +50,8 @@ import com.example.ciudadalerta.presentation.navigation.Rutas
 import com.example.ciudadalerta.presentation.util.WindowWidthSizeClass
 import com.example.ciudadalerta.presentation.util.rememberWindowWidthSizeClass
 import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Pantalla que muestra el historial de reportes creados por el ciudadano.
@@ -73,7 +90,8 @@ fun CitizenListContent(
     onSincronizar: () -> Unit = {},
     windowWidthSizeClass: WindowWidthSizeClass = rememberWindowWidthSizeClass()
 ) {
-    var reporteSeleccionado by remember { mutableStateOf<ReporteDummy?>(null) }
+    var reporteIdSeleccionado by remember { mutableStateOf<String?>(null) }
+    val reporteSeleccionado = listaReportes.find { it.id == reporteIdSeleccionado } ?: listaReportes.firstOrNull()
 
     Scaffold(
         topBar = {
@@ -147,7 +165,8 @@ fun CitizenListContent(
                             items(listaReportes, key = { it.id }) { reporte ->
                                 ReporteItem(
                                     reporte = reporte,
-                                    onClick = { reporteSeleccionado = reporte }
+                                    esSeleccionado = (reporte.id == reporteSeleccionado?.id),
+                                    onClick = { reporteIdSeleccionado = reporte.id }
                                 )
                             }
                         }
@@ -161,6 +180,7 @@ fun CitizenListContent(
                             items(listaReportes, key = { it.id }) { reporte ->
                                 ReporteItem(
                                     reporte = reporte,
+                                    esSeleccionado = false,
                                     onClick = null
                                 )
                             }
@@ -169,9 +189,8 @@ fun CitizenListContent(
                 }
             },
             detailPane = {
-                val reporte = reporteSeleccionado
-                if (reporte != null) {
-                    CitizenReportDetailPanel(reporte = reporte)
+                if (reporteSeleccionado != null) {
+                    CitizenReportDetailPanel(reporte = reporteSeleccionado)
                 } else {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -200,9 +219,12 @@ fun CitizenListContent(
 
 /**
  * Componente de detalle para la vista de panel lateral en el modo del ciudadano.
+ * Muestra todos los campos capturados: foto de evidencia, categoría, descripción, urgencia, ubicación GPS y fecha/hora.
  */
 @Composable
 fun CitizenReportDetailPanel(reporte: ReporteDummy) {
+    val context = LocalContext.current
+
     val colorEstatus = when (reporte.estatus) {
         "Pendiente" -> Color(0xFFE53935)
         "En Revisión" -> Color(0xFFFDD835)
@@ -210,13 +232,54 @@ fun CitizenReportDetailPanel(reporte: ReporteDummy) {
         else -> Color.Gray
     }
 
+    // Decodifica la foto de forma asíncrona si existe fotoPath
+    val fotoBitmap by produceState<ImageBitmap?>(initialValue = null, reporte.fotoPath) {
+        value = reporte.fotoPath?.let { ruta ->
+            withContext(Dispatchers.IO) {
+                try {
+                    BitmapFactory.decodeFile(ruta, BitmapFactory.Options().apply { inSampleSize = 4 })
+                        ?.asImageBitmap()
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Foto de Evidencia
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            val bitmap = fotoBitmap
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = "Foto del reporte",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+            } else {
+                Text(
+                    text = if (reporte.fotoPath == null) "Sin foto adjunta" else "Cargando imagen...",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp
+                )
+            }
+        }
+
+        // Título y Estatus
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -245,15 +308,67 @@ fun CitizenReportDetailPanel(reporte: ReporteDummy) {
 
         SyncChip(sincronizacion = reporte.sincronizacion)
 
+        if (reporte.urgente) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFE53935)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Peligro inminente: requiere atención inmediata",
+                    color = Color(0xFFE53935),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
+            }
+        }
+
         HorizontalDivider()
 
-        Text(text = "Descripción", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = reporte.descripcion, style = MaterialTheme.typography.bodyLarge)
+        // Datos del Reporte
+        DatoFilaDetalle("Descripción", reporte.descripcion)
+        if (reporte.categoria.isNotBlank()) {
+            DatoFilaDetalle("Categoría", reporte.categoria)
+        }
+        DatoFilaDetalle("Fecha de registro", reporte.fecha)
+        if (reporte.hora.isNotBlank()) {
+            DatoFilaDetalle("Hora aproximada del incidente", reporte.hora)
+        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // Ubicación GPS
+        val latitud = reporte.latitud
+        val longitud = reporte.longitud
+        if (latitud != null && longitud != null) {
+            DatoFilaDetalle("Ubicación GPS", "%.5f, %.5f".format(latitud, longitud))
+            OutlinedButton(
+                onClick = { abrirEnMaps(context, latitud, longitud, reporte.titulo) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(imageVector = Icons.Default.LocationOn, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Abrir ubicación en Maps")
+            }
+        } else {
+            DatoFilaDetalle("Ubicación GPS", "Sin ubicación registrada")
+        }
+    }
+}
 
-        Text(text = "Fecha del reporte", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = reporte.fecha, style = MaterialTheme.typography.bodyLarge)
+@Composable
+private fun DatoFilaDetalle(etiqueta: String, valor: String) {
+    Column {
+        Text(
+            text = etiqueta,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = valor,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -262,7 +377,11 @@ fun CitizenReportDetailPanel(reporte: ReporteDummy) {
  * @author Mario Nambo
  */
 @Composable
-fun ReporteItem(reporte: ReporteDummy, onClick: (() -> Unit)? = null) {
+fun ReporteItem(
+    reporte: ReporteDummy,
+    esSeleccionado: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
     val colorEstatus = when (reporte.estatus) {
         "Pendiente" -> Color(0xFFE53935)
         "En Revisión" -> Color(0xFFFDD835)
@@ -274,6 +393,7 @@ fun ReporteItem(reporte: ReporteDummy, onClick: (() -> Unit)? = null) {
         modifier = Modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        border = if (esSeleccionado) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -291,7 +411,10 @@ fun ReporteItem(reporte: ReporteDummy, onClick: (() -> Unit)? = null) {
                     text = reporte.titulo,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
                 )
                 Surface(
                     shape = MaterialTheme.shapes.small,
@@ -312,6 +435,8 @@ fun ReporteItem(reporte: ReporteDummy, onClick: (() -> Unit)? = null) {
             Text(
                 text = reporte.descripcion,
                 fontSize = 14.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -333,6 +458,18 @@ fun ReporteItem(reporte: ReporteDummy, onClick: (() -> Unit)? = null) {
     }
 }
 
+private fun abrirEnMaps(
+    context: Context,
+    latitud: Double,
+    longitud: Double,
+    titulo: String
+) {
+    val uri = Uri.parse("geo:0,0?q=$latitud,$longitud(${Uri.encode(titulo)})")
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+    } catch (_: Exception) {}
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ReporteItemPreview() {
@@ -345,7 +482,10 @@ fun ReporteItemPreview() {
                     descripcion = "Se detectó fuga de agua potable en la calle 5 de Mayo.",
                     estatus = "Pendiente",
                     fecha = "24 Oct 2023",
-                    sincronizacion = EstadoSync.LOCAL
+                    sincronizacion = EstadoSync.LOCAL,
+                    categoria = "Fuga de Agua",
+                    hora = "14:30",
+                    urgente = true
                 )
             )
         }
@@ -359,9 +499,9 @@ fun CitizenListContentPreview() {
         CitizenListContent(
             nombreUsuario = "Juan Pérez",
             listaReportes = listOf(
-                ReporteDummy("1", "Fuga de Agua", "Fuga importante en la calle principal.", "Pendiente", "24 Oct 2023", EstadoSync.LOCAL),
-                ReporteDummy("2", "Bache en Avenida", "Bache en el carril central.", "En Revisión", "23 Oct 2023", EstadoSync.ENVIADO),
-                ReporteDummy("3", "Falta de Alumbrado", "Luminaria sin funcionar.", "Resuelto", "20 Oct 2023", EstadoSync.ENVIADO)
+                ReporteDummy("1", "Fuga de Agua", "Fuga importante en la calle principal.", "Pendiente", "24 Oct 2023", EstadoSync.LOCAL, "Fuga de Agua", "10:30", true),
+                ReporteDummy("2", "Bache en Avenida", "Bache en el carril central.", "En Revisión", "23 Oct 2023", EstadoSync.ENVIADO, "Bache", "12:15", false),
+                ReporteDummy("3", "Falta de Alumbrado", "Luminaria sin funcionar.", "Resuelto", "20 Oct 2023", EstadoSync.ENVIADO, "Alumbrado", "20:00", false)
             ),
             estadoRed = EstadoRed.EN_LINEA,
             windowWidthSizeClass = WindowWidthSizeClass.COMPACT
@@ -376,9 +516,9 @@ fun CitizenListExpandedPreview() {
         CitizenListContent(
             nombreUsuario = "Juan Pérez",
             listaReportes = listOf(
-                ReporteDummy("1", "Fuga de Agua", "Fuga importante en la calle principal.", "Pendiente", "24 Oct 2023", EstadoSync.LOCAL),
-                ReporteDummy("2", "Bache en Avenida", "Bache en el carril central.", "En Revisión", "23 Oct 2023", EstadoSync.ENVIADO),
-                ReporteDummy("3", "Falta de Alumbrado", "Luminaria sin funcionar.", "Resuelto", "20 Oct 2023", EstadoSync.ENVIADO)
+                ReporteDummy("1", "Fuga de Agua", "Fuga importante en la calle principal.", "Pendiente", "24 Oct 2023", EstadoSync.LOCAL, "Fuga de Agua", "10:30", true),
+                ReporteDummy("2", "Bache en Avenida", "Bache en el carril central.", "En Revisión", "23 Oct 2023", EstadoSync.ENVIADO, "Bache", "12:15", false),
+                ReporteDummy("3", "Falta de Alumbrado", "Luminaria sin funcionar.", "Resuelto", "20 Oct 2023", EstadoSync.ENVIADO, "Alumbrado", "20:00", false)
             ),
             estadoRed = EstadoRed.EN_LINEA,
             windowWidthSizeClass = WindowWidthSizeClass.EXPANDED

@@ -13,10 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-
-
 /**
- * Modelo de datos temporal para la UI.
+ * Modelo de datos para la UI del ciudadano.
  */
 data class ReporteDummy(
     val id: String,
@@ -24,9 +22,14 @@ data class ReporteDummy(
     val descripcion: String,
     val estatus: String,
     val fecha: String,
-    val sincronizacion: String = EstadoSync.ENVIADO
+    val sincronizacion: String = EstadoSync.ENVIADO,
+    val categoria: String = "",
+    val hora: String = "",
+    val urgente: Boolean = false,
+    val fotoPath: String? = null,
+    val latitud: Double? = null,
+    val longitud: Double? = null
 )
-
 
 /**
  * ViewModel que gestiona el estado de la pantalla principal del ciudadano.
@@ -59,6 +62,7 @@ class CitizenListViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoRed.EN_LINEA)
 
     fun sincronizarAhora() = reporteRepository.sincronizarAhora()
+
     private fun cargarReportesDesdeBD() {
         viewModelScope.launch {
             // recolectamos el Flow de la base de datos
@@ -66,12 +70,18 @@ class CitizenListViewModel(
                 // Mapeamos los datos de la BD (Entity) a nuestro modelo visual (Dummy/UI Model)
                 _reportes.value = listaEntidades.map { entidad ->
                     ReporteDummy(
-                        id = entidad.id.toString(),
+                        id = entidad.id,
                         titulo = entidad.titulo,
                         descripcion = entidad.descripcion,
                         estatus = entidad.estatus,
-                        fecha = entidad.fechaCreacion.aFechaHora(),// Por ahora usamos el campo hora
-                        sincronizacion = entidad.estatusSincronizacion
+                        fecha = entidad.fechaCreacion.aFechaHora(),
+                        sincronizacion = entidad.estatusSincronizacion,
+                        categoria = entidad.categoria,
+                        hora = entidad.hora,
+                        urgente = entidad.requiereAtencionInmediata,
+                        fotoPath = entidad.fotoPath,
+                        latitud = entidad.latitud,
+                        longitud = entidad.longitud
                     )
                 }
             }
