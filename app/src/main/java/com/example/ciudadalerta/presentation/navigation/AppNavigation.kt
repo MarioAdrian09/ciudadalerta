@@ -147,7 +147,8 @@ fun AppNavigation(container: AppContainer) {
                         navController.navigate(Rutas.Login.ruta) {
                             popUpTo(0) { inclusive = true }
                         }
-                    }
+                    },
+                    container = container
                 )
             }
         }

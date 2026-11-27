@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Petinciones POST A SUPABASE (Respuestas del servidor)
+ * Petinciones POST A SUPABASE (Envios al servidor)
  */
 
 /**

@@ -1,37 +1,45 @@
 package com.example.ciudadalerta.presentation.screens.ciudadano
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.ciudadalerta.data.local.entity.EstadoSync
 import com.example.ciudadalerta.domain.models.EstadoRed
+import com.example.ciudadalerta.presentation.components.AdaptivePanelLayout
 import com.example.ciudadalerta.presentation.components.SyncBanner
 import com.example.ciudadalerta.presentation.components.SyncChip
 import com.example.ciudadalerta.presentation.navigation.Rutas
+import com.example.ciudadalerta.presentation.util.WindowWidthSizeClass
+import com.example.ciudadalerta.presentation.util.rememberWindowWidthSizeClass
 import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
 
 /**
- *
  * Pantalla que muestra el historial de reportes creados por el ciudadano.
- * Utiliza un Scaffold para contener la barra superior, el botón de creación (FAB)
- * y una LazyColumn para renderizar la lista de incidencias.
+ * Se adapta a pantallas grandes (Medium / Expanded) mediante panel lateral (AdaptivePanelLayout).
+ *
  * @author Mario Nambo
  */
 @Composable
@@ -62,8 +70,11 @@ fun CitizenListContent(
     estadoRed: EstadoRed,
     onCerrarSesion: () -> Unit = {},
     onCrearReporte: () -> Unit = {},
-    onSincronizar: () -> Unit = {}
+    onSincronizar: () -> Unit = {},
+    windowWidthSizeClass: WindowWidthSizeClass = rememberWindowWidthSizeClass()
 ) {
+    var reporteSeleccionado by remember { mutableStateOf<ReporteDummy?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -110,48 +121,159 @@ fun CitizenListContent(
             }
         }
     ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            SyncBanner(
-                estado = estadoRed,
-                pendientes = listaReportes.count { it.sincronizacion != EstadoSync.ENVIADO },
-                onSincronizar = onSincronizar
-            )
-            if (listaReportes.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Aún no tienes reportes. Toca + para crear uno.")
+        AdaptivePanelLayout(
+            modifier = Modifier.padding(paddingValues),
+            windowWidthSizeClass = windowWidthSizeClass,
+            listPane = {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    SyncBanner(
+                        estado = estadoRed,
+                        pendientes = listaReportes.count { it.sincronizacion != EstadoSync.ENVIADO },
+                        onSincronizar = onSincronizar
+                    )
+                    if (listaReportes.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Aún no tienes reportes. Toca + para crear uno.")
+                        }
+                    } else if (windowWidthSizeClass.muestraPanel) {
+                        // En pantallas medianas/grandes usamos cuadrícula adaptable
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = 280.dp),
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(vertical = 16.dp)
+                        ) {
+                            items(listaReportes, key = { it.id }) { reporte ->
+                                ReporteItem(
+                                    reporte = reporte,
+                                    onClick = { reporteSeleccionado = reporte }
+                                )
+                            }
+                        }
+                    } else {
+                        // En pantallas pequeñas usamos lista vertical estándar
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(vertical = 16.dp)
+                        ) {
+                            items(listaReportes, key = { it.id }) { reporte ->
+                                ReporteItem(
+                                    reporte = reporte,
+                                    onClick = null
+                                )
+                            }
+                        }
+                    }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(vertical = 16.dp)
-                ) {
-                    items(listaReportes, key = { it.id }) { reporte ->
-                        ReporteItem(reporte = reporte)
+            },
+            detailPane = {
+                val reporte = reporteSeleccionado
+                if (reporte != null) {
+                    CitizenReportDetailPanel(reporte = reporte)
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Selecciona un reporte de tu lista para ver su detalle aquí",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }
-        }
+        )
     }
 }
 
 /**
- *
+ * Componente de detalle para la vista de panel lateral en el modo del ciudadano.
+ */
+@Composable
+fun CitizenReportDetailPanel(reporte: ReporteDummy) {
+    val colorEstatus = when (reporte.estatus) {
+        "Pendiente" -> Color(0xFFE53935)
+        "En Revisión" -> Color(0xFFFDD835)
+        "Resuelto" -> Color(0xFF43A047)
+        else -> Color.Gray
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = reporte.titulo,
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f).padding(end = 8.dp)
+            )
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = colorEstatus.copy(alpha = 0.2f),
+                contentColor = colorEstatus
+            ) {
+                Text(
+                    text = reporte.estatus,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
+            }
+        }
+
+        SyncChip(sincronizacion = reporte.sincronizacion)
+
+        HorizontalDivider()
+
+        Text(text = "Descripción", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = reporte.descripcion, style = MaterialTheme.typography.bodyLarge)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(text = "Fecha del reporte", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = reporte.fecha, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+/**
  * Componente visual (Tarjeta) que representa un elemento individual dentro de la lista de reportes.
  * @author Mario Nambo
  */
 @Composable
-fun ReporteItem(reporte: ReporteDummy) {
-    // Definimos un color dependiendo del estatus del reporte
+fun ReporteItem(reporte: ReporteDummy, onClick: (() -> Unit)? = null) {
     val colorEstatus = when (reporte.estatus) {
-        "Pendiente" -> Color(0xFFE53935) // Rojo
-        "En Revisión" -> Color(0xFFFDD835) // Amarillo
-        "Resuelto" -> Color(0xFF43A047) // Verde
+        "Pendiente" -> Color(0xFFE53935)
+        "En Revisión" -> Color(0xFFFDD835)
+        "Resuelto" -> Color(0xFF43A047)
         else -> Color.Gray
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -171,7 +293,6 @@ fun ReporteItem(reporte: ReporteDummy) {
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                // Etiqueta del estatus
                 Surface(
                     shape = MaterialTheme.shapes.small,
                     color = colorEstatus.copy(alpha = 0.2f),
@@ -231,7 +352,7 @@ fun ReporteItemPreview() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Lista Ciudadano - Teléfono", device = Devices.PHONE, showBackground = true)
 @Composable
 fun CitizenListContentPreview() {
     CiudadalertaTheme(dynamicColor = false) {
@@ -242,7 +363,25 @@ fun CitizenListContentPreview() {
                 ReporteDummy("2", "Bache en Avenida", "Bache en el carril central.", "En Revisión", "23 Oct 2023", EstadoSync.ENVIADO),
                 ReporteDummy("3", "Falta de Alumbrado", "Luminaria sin funcionar.", "Resuelto", "20 Oct 2023", EstadoSync.ENVIADO)
             ),
-            estadoRed = EstadoRed.EN_LINEA
+            estadoRed = EstadoRed.EN_LINEA,
+            windowWidthSizeClass = WindowWidthSizeClass.COMPACT
+        )
+    }
+}
+
+@Preview(name = "Lista Ciudadano - Tablet (Expanded Two Pane)", device = Devices.TABLET, showBackground = true)
+@Composable
+fun CitizenListExpandedPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        CitizenListContent(
+            nombreUsuario = "Juan Pérez",
+            listaReportes = listOf(
+                ReporteDummy("1", "Fuga de Agua", "Fuga importante en la calle principal.", "Pendiente", "24 Oct 2023", EstadoSync.LOCAL),
+                ReporteDummy("2", "Bache en Avenida", "Bache en el carril central.", "En Revisión", "23 Oct 2023", EstadoSync.ENVIADO),
+                ReporteDummy("3", "Falta de Alumbrado", "Luminaria sin funcionar.", "Resuelto", "20 Oct 2023", EstadoSync.ENVIADO)
+            ),
+            estadoRed = EstadoRed.EN_LINEA,
+            windowWidthSizeClass = WindowWidthSizeClass.EXPANDED
         )
     }
 }

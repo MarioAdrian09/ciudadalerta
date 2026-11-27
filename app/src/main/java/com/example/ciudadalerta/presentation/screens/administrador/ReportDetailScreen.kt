@@ -109,7 +109,7 @@ fun ReportDetailScreen(
 }
 
 @Composable
-private fun DetalleContenido(
+internal fun DetalleContenido(
     reporte: ReportDetailUi,
     estatusSeleccionado: String?,
     guardando: Boolean,

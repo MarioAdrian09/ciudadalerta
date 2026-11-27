@@ -14,7 +14,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
@@ -26,22 +26,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.example.ciudadalerta.presentation.util.WindowWidthSizeClass
+import com.example.ciudadalerta.presentation.util.rememberWindowWidthSizeClass
 import com.example.ciudadalerta.ui.theme.CiudadalertaTheme
 import java.util.Calendar
 
-
-
-
 /**
- *
  * Pantalla que permite al ciudadano llenar un formulario para reportar una nueva incidencia.
- * Incluye validación visual, selección de categorías (Radios), opciones adicionales (Checkbox)
- * y selección de hora (TimePicker).
+ * Se adapta dinámicamente a pantallas pequeñas (Compact) y grandes/tabletas (Medium / Expanded).
+ *
  * @author Mario Nambo
  */
 @Composable
@@ -121,7 +120,8 @@ fun CreateReportContent(
     onObtenerUbicacion: () -> Unit = {},
     onTomarFoto: () -> Unit = {},
     onGuardarReporte: () -> Unit = {},
-    onVolver: () -> Unit = {}
+    onVolver: () -> Unit = {},
+    windowWidthSizeClass: WindowWidthSizeClass = rememberWindowWidthSizeClass()
 ) {
     // Estado propio de la UI: el TimePicker
     var mostrarTimePicker by remember { mutableStateOf(false) }
@@ -146,7 +146,7 @@ fun CreateReportContent(
                 title = { Text("Nuevo Reporte") },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -157,98 +157,313 @@ fun CreateReportContent(
             )
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // 1. Evidencia (Foto)
-            Button(
-                onClick = onTomarFoto,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                shape = MaterialTheme.shapes.medium,
-                contentPadding = PaddingValues(0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    .fillMaxSize()
+                    .widthIn(max = 1000.dp)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (fotoBitmap != null) {
-                    Image(
-                        bitmap = fotoBitmap,
-                        contentDescription = "Foto del reporte",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Cámara", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Toma una foto", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
-
-            // 2. Cajas de Texto
-            OutlinedTextField(
-                value = state.titulo,
-                onValueChange = onTituloChanged,
-                label = { Text("Título del reporte") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = state.descripcion,
-                onValueChange = onDescripcionChanged,
-                label = { Text("Descripción detallada") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
-                maxLines = 4
-            )
-
-            // 3. Categoría (Radio Buttons)
-            Text("Categoría del Problema:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Column(modifier = Modifier.selectableGroup()) {
-                categoriasReporte.forEach { categoria ->
+                if (windowWidthSizeClass.muestraPanel) {
+                    // Diseño en 2 columnas para pantallas anchas (Tablets / Foldables / Desktops)
                     Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .selectable(
-                                selected = (categoria == state.categoria),
-                                onClick = { onCategoriaChanged(categoria) },
-                                role = Role.RadioButton
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        // Columna Izquierda: Fotografía, GPS, Urgencia y Botón Guardar
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = onTomarFoto,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                shape = MaterialTheme.shapes.medium,
+                                contentPadding = PaddingValues(0.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                if (fotoBitmap != null) {
+                                    Image(
+                                        bitmap = fotoBitmap,
+                                        contentDescription = "Foto del reporte",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            imageVector = Icons.Default.CameraAlt,
+                                            contentDescription = "Cámara",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("Toma una foto de evidencia", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+
+                            // Ubicación GPS
+                            OutlinedButton(
+                                onClick = onObtenerUbicacion,
+                                enabled = !state.obteniendoUbicacion,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                if (state.obteniendoUbicacion) {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Ubicación")
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                val ubicacion = state.ubicacion
+                                Text(
+                                    when {
+                                        state.obteniendoUbicacion -> "Obteniendo ubicación..."
+                                        ubicacion != null -> "Ubicación: %.5f, %.5f".format(
+                                            ubicacion.latitud, ubicacion.longitud
+                                        )
+                                        else -> "Obtener mi ubicación GPS"
+                                    }
+                                )
+                            }
+
+                            // Danger Checkbox
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Checkbox(
+                                    checked = state.requiereAtencionInmediata,
+                                    onCheckedChange = onUrgenteChanged
+                                )
+                                Text("Este problema representa un peligro inminente")
+                            }
+
+                            state.errorMessage?.let {
+                                Text(text = it, color = MaterialTheme.colorScheme.error)
+                            }
+
+                            Button(
+                                onClick = onGuardarReporte,
+                                enabled = !state.guardando,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                            ) {
+                                Text(if (state.guardando) "Guardando..." else "Guardar Reporte", fontSize = 16.sp)
+                            }
+                        }
+
+                        // Columna Derecha: Título, Descripción, Categorías y Hora
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = state.titulo,
+                                onValueChange = onTituloChanged,
+                                label = { Text("Título del reporte") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
                             )
-                            .padding(horizontal = 16.dp),
+
+                            OutlinedTextField(
+                                value = state.descripcion,
+                                onValueChange = onDescripcionChanged,
+                                label = { Text("Descripción detallada") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(110.dp),
+                                maxLines = 4
+                            )
+
+                            Text("Categoría del Problema:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Column(modifier = Modifier.selectableGroup()) {
+                                categoriasReporte.forEach { categoria ->
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(44.dp)
+                                            .selectable(
+                                                selected = (categoria == state.categoria),
+                                                onClick = { onCategoriaChanged(categoria) },
+                                                role = Role.RadioButton
+                                            )
+                                            .padding(horizontal = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = (categoria == state.categoria),
+                                            onClick = null
+                                        )
+                                        Text(
+                                            text = categoria,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(start = 12.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("Hora del incidente:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text(text = state.hora ?: "No seleccionada", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                OutlinedButton(onClick = { mostrarTimePicker = true }) {
+                                    Text("Seleccionar Hora")
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Diseño en 1 columna para pantallas verticales compactas (Teléfonos)
+                    Button(
+                        onClick = onTomarFoto,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        if (fotoBitmap != null) {
+                            Image(
+                                bitmap = fotoBitmap,
+                                contentDescription = "Foto del reporte",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Cámara", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Toma una foto", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = state.titulo,
+                        onValueChange = onTituloChanged,
+                        label = { Text("Título del reporte") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = state.descripcion,
+                        onValueChange = onDescripcionChanged,
+                        label = { Text("Descripción detallada") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        maxLines = 4
+                    )
+
+                    Text("Categoría del Problema:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Column(modifier = Modifier.selectableGroup()) {
+                        categoriasReporte.forEach { categoria ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .selectable(
+                                        selected = (categoria == state.categoria),
+                                        onClick = { onCategoriaChanged(categoria) },
+                                        role = Role.RadioButton
+                                    )
+                                    .padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = (categoria == state.categoria),
+                                    onClick = null
+                                )
+                                Text(
+                                    text = categoria,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Text("Hora aproximada del incidente:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RadioButton(
-                            selected = (categoria == state.categoria),
-                            onClick = null
-                        )
+                        Text(text = state.hora ?: "No seleccionada")
+                        OutlinedButton(onClick = { mostrarTimePicker = true }) {
+                            Text("Seleccionar Hora")
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = onObtenerUbicacion,
+                        enabled = !state.obteniendoUbicacion,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (state.obteniendoUbicacion) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Ubicación")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val ubicacion = state.ubicacion
                         Text(
-                            text = categoria,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp)
+                            when {
+                                state.obteniendoUbicacion -> "Obteniendo ubicación..."
+                                ubicacion != null -> "Ubicación: %.5f, %.5f".format(
+                                    ubicacion.latitud, ubicacion.longitud
+                                )
+                                else -> "Obtener mi ubicación GPS"
+                            }
                         )
                     }
-                }
-            }
 
-            // 4. Hora (TimePicker)
-            Text("Hora aproximada del incidente:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = state.hora ?: "No seleccionada")
-                OutlinedButton(onClick = { mostrarTimePicker = true }) {
-                    Text("Seleccionar Hora")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = state.requiereAtencionInmediata,
+                            onCheckedChange = onUrgenteChanged
+                        )
+                        Text("Este problema representa un peligro inminente")
+                    }
+
+                    state.errorMessage?.let {
+                        Text(text = it, color = MaterialTheme.colorScheme.error)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = onGuardarReporte,
+                        enabled = !state.guardando,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                    ) {
+                        Text(if (state.guardando) "Guardando..." else "Guardar Reporte", fontSize = 16.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
 
@@ -269,62 +484,6 @@ fun CreateReportContent(
                     text = { TimePicker(state = timePickerState) }
                 )
             }
-
-            // 5. Ubicación GPS
-            OutlinedButton(
-                onClick = onObtenerUbicacion,
-                enabled = !state.obteniendoUbicacion,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (state.obteniendoUbicacion) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                } else {
-                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Ubicación")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                val ubicacion = state.ubicacion
-                Text(
-                    when {
-                        state.obteniendoUbicacion -> "Obteniendo ubicación..."
-                        ubicacion != null -> "Ubicación: %.5f, %.5f".format(
-                            ubicacion.latitud, ubicacion.longitud
-                        )
-                        else -> "Obtener mi ubicación GPS"
-                    }
-                )
-            }
-
-            // 6. Checkbox
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = state.requiereAtencionInmediata,
-                    onCheckedChange = onUrgenteChanged
-                )
-                Text("Este problema representa un peligro inminente")
-            }
-
-            // Mensaje de error
-            state.errorMessage?.let {
-                Text(text = it, color = MaterialTheme.colorScheme.error)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 7. Guardar
-            Button(
-                onClick = onGuardarReporte,
-                enabled = !state.guardando,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-            ) {
-                Text(if (state.guardando) "Guardando..." else "Guardar Reporte", fontSize = 16.sp)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -332,7 +491,7 @@ fun CreateReportContent(
 private fun tienePermiso(context: Context, permiso: String): Boolean =
     ContextCompat.checkSelfPermission(context, permiso) == PackageManager.PERMISSION_GRANTED
 
-@Preview(showBackground = true)
+@Preview(name = "Crear Reporte - Teléfono", device = Devices.PHONE, showBackground = true)
 @Composable
 fun CreateReportContentPreview() {
     CiudadalertaTheme(dynamicColor = false) {
@@ -343,7 +502,25 @@ fun CreateReportContentPreview() {
                 categoria = "Fuga de Agua",
                 requiereAtencionInmediata = true,
                 hora = "10:30"
-            )
+            ),
+            windowWidthSizeClass = WindowWidthSizeClass.COMPACT
+        )
+    }
+}
+
+@Preview(name = "Crear Reporte - Tablet (Expanded 2 Columnas)", device = Devices.TABLET, showBackground = true)
+@Composable
+fun CreateReportExpandedPreview() {
+    CiudadalertaTheme(dynamicColor = false) {
+        CreateReportContent(
+            state = CreateReportUiState(
+                titulo = "Fuga de Agua",
+                descripcion = "Fuga constante de agua sobre la banqueta",
+                categoria = "Fuga de Agua",
+                requiereAtencionInmediata = true,
+                hora = "10:30"
+            ),
+            windowWidthSizeClass = WindowWidthSizeClass.EXPANDED
         )
     }
 }
